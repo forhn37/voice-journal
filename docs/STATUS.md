@@ -1,6 +1,6 @@
 # Voice Journal - 현재 상태
 
-> 마지막 업데이트: 2025-12-10
+> 마지막 업데이트: 2025-12-10 night
 
 ---
 
@@ -17,6 +17,9 @@
 - [x] Sentry 설정 (hooks.server.ts, hooks.client.ts)
 - [x] 환경변수 설정 (.env.example)
 - [x] 공통 타입/상수 파일 분리 ($lib/types.ts, $lib/constants.ts)
+- [x] Git 설정 (main 브랜치, GitHub remote)
+- [x] 슬래시 명령 설정 (.claude/commands/)
+- [x] 워크플로우 문서화 (CLAUDE.md, STATUS.md, work-logs)
 
 ### 페이지 및 UI
 - [x] 기본 레이아웃 (+layout.svelte)
@@ -48,42 +51,51 @@
 
 ---
 
-## 진행 중인 작업
+## 부분 완료 (추가 작업 필요)
 
-- [ ] Git 워크플로우 설정 (브랜치, remote)
-- [ ] 슬래시 명령 설정
+### 에러 처리 (Day 12)
+- [x] 기본 에러 메시지 표시 (토스트)
+- [x] 각 단계별 에러 catch
+- [x] 사용량 초과 안내
+- [ ] 재시도 버튼/로직
+- [ ] 에러 UI 컴포넌트 (캐릭터 + 메시지)
+
+### UI/UX (Day 13)
+- [x] 반응형 디자인 (모바일 퍼스트)
+- [x] 기본 애니메이션 (bounce, spin)
+- [x] 폰트/색상 통일 (CSS 변수)
+- [ ] 빈 상태 UI (일기 없을 때)
+- [ ] 로딩 스켈레톤
+- [ ] 페이지 전환 애니메이션
 
 ---
 
 ## 다음 작업 (우선순위순)
 
-1. **Git 설정**
-   - main 브랜치로 변경
-   - GitHub remote 연결
-   - dev 브랜치 생성
+1. **Supabase Auth 연동** (Day 8)
+   - 현재: user_id가 null로 저장됨
+   - 필요: 로그인/회원가입 + RLS 적용
 
-2. **Supabase Auth 연동** (Day 8)
-   - 현재: 로컬스토리지만 사용
-   - 필요: 실제 인증 시스템
+2. **에러 처리 강화** (Day 12 남은 부분)
+   - 재시도 버튼 추가
+   - 에러 UI 개선
 
-3. **스트릭 시스템** (Day 10)
+3. **UI/UX 다듬기** (Day 13 남은 부분)
+   - 빈 상태 UI
+   - 로딩 스켈레톤
+
+4. **스트릭 시스템** (Day 10)
    - 연속 기록 일수 계산
    - UI 표시
 
-4. **공유 기능** (Day 11)
-   - 공유 이미지 생성
-   - Web Share API
-
-5. **배포** (Day 14)
-   - Vercel 배포
-   - 환경변수 설정
+5. **Vercel 배포** (Day 14)
 
 ---
 
 ## 알려진 이슈
 
-1. **인증 없음**: 현재 user_id가 null로 저장됨 -> Supabase Auth 필요
-2. **CSS 경고**: JournalCard의 -webkit-line-clamp 호환성 경고 (무시 가능)
+1. **인증 없음**: user_id가 null로 저장됨 -> Supabase Auth 필요
+2. **CSS 경고**: JournalCard의 -webkit-line-clamp (무시 가능)
 
 ---
 
