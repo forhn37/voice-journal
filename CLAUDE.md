@@ -1,185 +1,262 @@
 # Voice Journal
 
-> AI 음성 그림일기 앱 - "말로 기록하면, AI가 그림일기로 만들어주는 감성 저널링 앱"
+> **매 세션 시작 시 이 파일을 읽습니다. 모든 규칙을 준수하세요.**
 
-## 프로젝트 개요
+---
 
-- **한줄 설명**: 음성으로 일기를 말하면 AI가 감정 분석 + 그림일기 생성
-- **타겟**: 혼자 사는 2030, 일기 쓰고 싶지만 귀찮은 사람
-- **MVP 기간**: 2주 (퇴근 후 저녁 3시간씩)
-- **차별화**: 음성 입력 + AI 그림 + 캐릭터 공감
+## 1. 세션 시작 절차 (필수)
 
-## 기술 스택
+```
+1. docs/STATUS.md 읽기 - 현재 진행 상황
+2. docs/work-logs/ 최신 파일 읽기 - 직전 작업 내용
+3. 사용자 요청에 따라 관련 명세 읽기
+```
 
+**절대 금지:**
+- 이전 세션 기억에 의존
+- 파일 읽지 않고 상태 추측
+- 확인 없이 바로 구현 시작
+
+---
+
+## 2. 핵심 원칙
+
+### 구현 전 필수
+1. **명세 먼저** - `docs/` 해당 문서 읽기
+2. **깊게 고민** - 여러 접근법 비교
+3. **계획 수립** - TodoWrite로 작업 분해
+4. **승인 요청** - 새로운 아이디어는 보고 후 진행
+
+### 절대 금지
+- 명세 없이 구현 시작
+- 임의로 기능 추가/변경
+- 더 좋은 방법이라고 독단적 결정
+- 코드에 이모지 사용 (cp949 에러)
+
+---
+
+## 3. 프로젝트 개요
+
+**AI 음성 그림일기 앱** - "말로 기록하면, AI가 그림일기로 만들어주는 감성 저널링 앱"
+
+### 기술 스택
 | 영역 | 기술 |
 |-----|------|
-| Frontend | **Svelte 5** + SvelteKit 2 + TailwindCSS |
+| Frontend | Svelte 5 + SvelteKit 2 + TailwindCSS 4 |
 | STT | OpenAI Whisper API |
 | AI 분석 | GPT-4o-mini |
-| 이미지 생성 | DALL-E 3 (512x512) |
-| DB/Auth | Supabase (PostgreSQL + Auth) |
+| 이미지 | DALL-E 3 (1024x1024) |
+| DB/Auth | Supabase |
 | 배포 | Vercel |
 | 모니터링 | Sentry |
 
-## 프로젝트 구조
+### 핵심 플로우
+```
+[녹음] -> [STT] -> [AI 분석] -> [그림 생성] -> [저장]
+```
+
+---
+
+## 4. 프로젝트 구조
 
 ```
 voice-journal/
 ├── src/
 │   ├── routes/
-│   │   ├── +page.svelte              # 메인 (일기 작성)
-│   │   ├── +layout.svelte            # 레이아웃
-│   │   ├── onboarding/+page.svelte   # 온보딩
-│   │   ├── calendar/+page.svelte     # 캘린더 뷰
-│   │   ├── journal/[id]/+page.svelte # 일기 상세
-│   │   └── api/
-│   │       ├── transcribe/+server.ts # Whisper STT
-│   │       ├── analyze/+server.ts    # GPT 분석
-│   │       └── generate-image/+server.ts # DALL-E
-│   ├── lib/
-│   │   ├── components/
-│   │   │   ├── RecordButton.svelte   # 녹음 버튼
-│   │   │   ├── LoadingCharacter.svelte # 로딩 캐릭터
-│   │   │   ├── JournalCard.svelte    # 일기 카드
-│   │   │   └── Calendar.svelte       # 캘린더
-│   │   ├── stores/
-│   │   │   └── user.svelte.ts        # 유저 상태 (Svelte 5 runes)
-│   │   ├── utils/
-│   │   │   ├── audio.ts              # 녹음 유틸
-│   │   │   └── supabase.ts           # Supabase 클라이언트
-│   │   └── prompts/
-│   │       ├── analyze.ts            # GPT 프롬프트
-│   │       └── image.ts              # DALL-E 프롬프트
-│   └── app.css                       # 글로벌 스타일
-├── static/
-│   └── character/                    # 캐릭터 이미지
+│   │   ├── +page.svelte           # 메인 (일기 작성)
+│   │   ├── +layout.svelte         # 레이아웃
+│   │   ├── onboarding/            # 온보딩
+│   │   ├── calendar/              # 캘린더 뷰
+│   │   ├── journal/[id]/          # 일기 상세
+│   │   └── api/                   # 서버 API
+│   │       ├── transcribe/        # Whisper STT
+│   │       ├── analyze/           # GPT 분석
+│   │       ├── generate-image/    # DALL-E
+│   │       ├── journal/           # 일기 CRUD
+│   │       └── usage/             # 사용량 체크
+│   └── lib/
+│       ├── components/            # UI 컴포넌트
+│       ├── stores/                # 상태 관리
+│       ├── utils/                 # 유틸리티
+│       ├── server/                # 서버 전용
+│       ├── prompts/               # AI 프롬프트
+│       ├── types.ts               # 공통 타입
+│       └── constants.ts           # 공통 상수
 ├── docs/
-│   ├── PRD.md                        # 상세 기획
-│   ├── TECH_SPEC.md                  # 기술 스펙
-│   └── ROADMAP.md                    # 개발 로드맵
-├── .env.example
-├── CLAUDE.md                         # 이 파일
-└── package.json
+│   ├── STATUS.md                  # 현재 진행 상황 (필수!)
+│   ├── work-logs/                 # 작업 로그
+│   ├── PRD.md                     # 제품 기획
+│   ├── TECH_SPEC.md               # 기술 스펙
+│   └── ROADMAP.md                 # 개발 로드맵
+└── .claude/commands/              # 슬래시 명령
 ```
 
-## 코딩 컨벤션
+---
 
-### 일반
-- TypeScript 사용
-- 함수형 컴포넌트
-- 한국어 주석 OK
+## 5. 명세 문서 색인
 
-### Svelte 5 (Runes 문법)
-- `+page.svelte` / `+server.ts` 라우팅 규칙 따르기
-- 상태: `let count = $state(0)`
-- 파생값: `let doubled = $derived(count * 2)`
-- 이펙트: `$effect(() => { ... })`
-- props: `let { name, age = 20 } = $props()`
-- 이벤트: `onclick` (소문자, on: 디렉티브 대신)
+| 작업 유형 | 읽어야 할 문서 |
+|----------|---------------|
+| 제품 기획/UX | `docs/PRD.md` |
+| 기술 구현 | `docs/TECH_SPEC.md` |
+| 일정/진행 | `docs/ROADMAP.md` |
+| 현재 상태 | `docs/STATUS.md` |
+
+---
+
+## 6. 코딩 컨벤션
+
+### Svelte 5 (Runes)
+```svelte
+<script lang="ts">
+  let count = $state(0);                    // 상태
+  let doubled = $derived(count * 2);        // 파생값
+  $effect(() => { console.log(count); });   // 이펙트
+  let { name } = $props();                  // Props
+</script>
+
+<button onclick={() => count++}>Click</button>  <!-- 소문자 -->
+```
 
 ### API
-- 모든 외부 API 호출은 서버사이드 (`+server.ts`)
-- API 키는 절대 클라이언트에 노출 금지
-- 에러는 적절한 HTTP 상태 코드로 응답
+- 모든 외부 API는 서버사이드 (`+server.ts`)
+- API 키 절대 클라이언트 노출 금지
 
-### 스타일
-- TailwindCSS 유틸리티 클래스 사용
-- 커스텀 CSS는 최소화
-- 모바일 퍼스트
+### 타입 & 상수
+- 공통 타입: `$lib/types.ts`
+- 공통 상수: `$lib/constants.ts`
+- 감정 매핑: `EMOTION_EMOJI`, `EMOTION_KOREAN`
 
-## 환경 변수
+---
+
+## 7. Git 규칙
+
+### 브랜치
+- `main`: 프로덕션
+- `dev`: 개발 (기본 작업 브랜치)
+
+### 커밋 메시지
+```
+<type>: <subject>
+
+<body>
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Type**: feat, fix, docs, style, refactor, test, chore
+
+### 커밋 전 체크리스트
+- [ ] 명세대로 구현했는가?
+- [ ] STATUS.md 업데이트했는가?
+- [ ] TodoWrite completed 처리했는가?
+- [ ] 코드에 이모지 없는가?
+- [ ] `npm run check` 통과하는가?
+
+---
+
+## 8. TodoWrite 규칙
+
+### 필수 업데이트 시점
+- 작업 시작 -> `in_progress`
+- 작업 완료 -> **즉시** `completed`
+- 새 작업 발견 -> 리스트에 추가
+
+### 금지
+- 여러 작업 완료 후 한번에 업데이트
+- 2개 이상 동시 in_progress (항상 1개만)
+
+---
+
+## 9. Work Log 규칙
+
+### 날짜 기준 (새벽 6시)
+- 새벽 6시 이전 -> **전날** night로 기록
+- 예: 12/11 새벽 02:00 -> `2025-12-10.night.md`
+
+### 시간대
+| 시간대 | 시간 |
+|--------|------|
+| am | 06:00 ~ 12:00 |
+| pm | 12:00 ~ 18:00 |
+| night | 18:00 ~ 06:00 |
+
+---
+
+## 10. 환경 변수
 
 ```env
-# OpenAI
+# 서버 전용
 OPENAI_API_KEY=sk-...
+SUPABASE_SECRET_KEY=eyJ...
 
-# Supabase
+# 클라이언트 허용
 PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-
-# Sentry
+PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 PUBLIC_SENTRY_DSN=https://xxx@sentry.io/xxx
 ```
 
-## 핵심 플로우
+---
 
-```
-[녹음] → [STT] → [AI 분석] → [그림 생성] → [저장]
-  │         │         │            │          │
-  │         │         │            │          └─ Supabase DB
-  │         │         │            └─ DALL-E 3
-  │         │         └─ GPT-4o-mini (장면추출, 감정, 요약)
-  │         └─ Whisper API
-  └─ MediaRecorder API
-```
+## 11. 슬래시 명령
 
-## 비용 (1회당)
+| 명령 | 용도 |
+|------|------|
+| `/start` | 세션 시작 (STATUS.md 확인) |
+| `/spec` | 명세 확인 |
+| `/worklog` | 작업 로그 작성 |
+| `/todo` | 현재 작업 확인 |
 
-- Whisper: $0.018 (3분)
-- GPT-4o-mini: $0.005
-- DALL-E 3: $0.040
-- **총: $0.063**
+---
 
-## 제한 사항
-
-- 녹음: 최소 3초, 최대 5분
-- 무료 티어: 하루 3회
-- 이미지: 512x512 고정
-
-## 관련 문서
-
-- [PRD.md](docs/PRD.md) - 상세 기획
-- [TECH_SPEC.md](docs/TECH_SPEC.md) - 기술 스펙, DB 스키마, 프롬프트
-- [ROADMAP.md](docs/ROADMAP.md) - Day별 개발 계획
-
-## 시작하기
+## 12. 핵심 명령어
 
 ```bash
-# 프로젝트 생성 (Svelte 5 + SvelteKit 2)
-npx sv create voice-journal
-cd voice-journal
-
-# 의존성 설치
-npm install
-
-# 환경변수 설정
-cp .env.example .env
-# .env 파일 편집
-
-# 개발 서버
+# 개발
 npm run dev
+
+# 타입 체크
+npm run check
+
+# 포맷팅
+npm run format
+
+# 빌드
+npm run build
 ```
 
-## Svelte 5 핵심 문법
+---
 
-```svelte
-<script lang="ts">
-  // 상태
-  let count = $state(0);
-  
-  // 파생값
-  let doubled = $derived(count * 2);
-  
-  // 이펙트
-  $effect(() => {
-    console.log('count changed:', count);
-  });
-  
-  // Props
-  let { name, age = 20 } = $props<{ name: string; age?: number }>();
-</script>
+## 13. 제한 사항
 
-<!-- 이벤트: onclick (소문자) -->
-<button onclick={() => count++}>
-  {count}
-</button>
-```
+- 녹음: 최소 3초, 최대 5분
+- 무료: 하루 3회 (`DAILY_LIMIT`)
+- 이미지: 1024x1024
 
-## Day 1 TODO
+---
 
-1. SvelteKit 프로젝트 생성 (TailwindCSS 포함)
-2. 기본 레이아웃 + 라우트 구조
-3. Sentry 설정
-4. 환경변수 설정
-5. 기본 UI 컴포넌트 (RecordButton)
+## 14. 비용 (1회당)
+
+| API | 비용 |
+|-----|------|
+| Whisper | $0.018 |
+| GPT-4o-mini | $0.005 |
+| DALL-E 3 | $0.080 |
+| **총** | **~$0.103** |
+
+---
+
+## 15. 절대 금지 (NEVER)
+
+- 명세 없이 구현 시작
+- 코드/커밋에 이모지 사용
+- STATUS.md 업데이트 없이 커밋
+- 이전 세션 기억에만 의존
+- TodoWrite 완료 처리 미루기
+- 임의로 기능 추가/변경
+- 사용자 승인 없이 새 아이디어 구현
+
+---
+
+> **진행 상황**: `docs/STATUS.md` 확인
+> **명세 문서**: `docs/PRD.md`, `docs/TECH_SPEC.md`, `docs/ROADMAP.md`

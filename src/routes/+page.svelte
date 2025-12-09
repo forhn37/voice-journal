@@ -3,6 +3,9 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import RecordButton from '$lib/components/RecordButton.svelte';
+	import BottomNav from '$lib/components/BottomNav.svelte';
+	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
+	import type { AnalysisResult, UsageInfo, Emotion } from '$lib/types';
 
 	// 페이지 상태
 	type PageStatus = 'idle' | 'transcribing' | 'analyzing' | 'generating' | 'saving' | 'completed';
@@ -14,23 +17,12 @@
 	// 결과 데이터
 	let transcript = $state('');
 	let audioDuration = $state(0);
-	let analysisResult = $state<{
-		scene: string;
-		emotion: string;
-		emotionScore: number;
-		summary: string;
-		characterMessage: string;
-	} | null>(null);
+	let analysisResult = $state<AnalysisResult | null>(null);
 	let imageUrl = $state('');
 	let savedJournalId = $state<string | null>(null);
 
 	// 사용량 정보
-	let usageInfo = $state<{
-		used: number;
-		limit: number;
-		remaining: number;
-		canCreate: boolean;
-	} | null>(null);
+	let usageInfo = $state<UsageInfo | null>(null);
 
 	onMount(async () => {
 		// 온보딩 체크
@@ -200,25 +192,6 @@
 		}, 3000);
 	}
 
-	// 감정 이모지 매핑
-	const emotionEmoji: Record<string, string> = {
-		joy: '😊',
-		sadness: '😢',
-		anger: '😤',
-		fear: '😨',
-		anxiety: '😰',
-		neutral: '😌'
-	};
-
-	// 감정 한글 매핑
-	const emotionKorean: Record<string, string> = {
-		joy: '기쁨',
-		sadness: '슬픔',
-		anger: '화남',
-		fear: '두려움',
-		anxiety: '불안',
-		neutral: '평온'
-	};
 </script>
 
 <main class="flex-1 flex flex-col items-center justify-center px-6 pb-8">
@@ -283,8 +256,8 @@
 
 			<!-- 감정 -->
 			<div class="flex items-center gap-2 mb-4">
-				<span class="text-2xl">{emotionEmoji[analysisResult.emotion] || '😌'}</span>
-				<span class="text-(--color-text-light)">{emotionKorean[analysisResult.emotion] || '평온'}</span>
+				<span class="text-2xl">{EMOTION_EMOJI[analysisResult.emotion] || '😌'}</span>
+				<span class="text-(--color-text-light)">{EMOTION_KOREAN[analysisResult.emotion] || '평온'}</span>
 			</div>
 
 			<!-- 캐릭터 메시지 -->
@@ -324,31 +297,4 @@
 	{/if}
 </main>
 
-<!-- 하단 네비게이션 -->
-<nav class="flex justify-around py-4 border-t border-gray-200">
-	<a href="/" class="flex flex-col items-center text-(--color-primary)">
-		<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-			<path
-				d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"
-			/>
-			<path
-				d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
-			/>
-		</svg>
-		<span class="text-xs mt-1">기록</span>
-	</a>
-	<a
-		href="/calendar"
-		class="flex flex-col items-center text-(--color-text-light) hover:text-(--color-primary)"
-	>
-		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-			/>
-		</svg>
-		<span class="text-xs mt-1">캘린더</span>
-	</a>
-</nav>
+<BottomNav />

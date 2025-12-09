@@ -1,8 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
-
-const DAILY_LIMIT = 3;
+import { DAILY_LIMIT } from '$lib/constants';
 
 // 일기 저장
 export const POST: RequestHandler = async ({ request }) => {

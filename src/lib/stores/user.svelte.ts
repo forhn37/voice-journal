@@ -1,13 +1,7 @@
 // 유저 상태 관리 (Svelte 5 Runes)
 
 import { browser } from '$app/environment';
-
-// 유저 정보 타입
-export interface UserInfo {
-	nickname: string;
-	notificationTime: string | null;
-	onboardingCompleted: boolean;
-}
+import type { UserInfo } from '$lib/types';
 
 // 기본값
 const defaultUser: UserInfo = {

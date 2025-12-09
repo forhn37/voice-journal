@@ -2,31 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import type { Journal } from '$lib/utils/supabase';
+	import BottomNav from '$lib/components/BottomNav.svelte';
+	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
+	import type { Journal } from '$lib/types';
 
 	let journal = $state<Journal | null>(null);
 	let isLoading = $state(true);
 	let errorMessage = $state('');
-
-	// 감정 이모지 매핑
-	const emotionEmoji: Record<string, string> = {
-		joy: '😊',
-		sadness: '😢',
-		anger: '😤',
-		fear: '😨',
-		anxiety: '😰',
-		neutral: '😌'
-	};
-
-	// 감정 한글 매핑
-	const emotionKorean: Record<string, string> = {
-		joy: '기쁨',
-		sadness: '슬픔',
-		anger: '화남',
-		fear: '두려움',
-		anxiety: '불안',
-		neutral: '평온'
-	};
 
 	// 날짜 포맷팅
 	const formatDate = (dateString: string) => {
@@ -115,9 +97,9 @@
 
 			<!-- 감정 -->
 			<div class="flex items-center gap-2 mb-6">
-				<span class="text-2xl">{emotionEmoji[journal.emotion] || '😌'}</span>
+				<span class="text-2xl">{EMOTION_EMOJI[journal.emotion] || '😌'}</span>
 				<span class="text-(--color-text-light)"
-					>{emotionKorean[journal.emotion] || '평온'}</span
+					>{EMOTION_KOREAN[journal.emotion] || '평온'}</span
 				>
 			</div>
 
@@ -136,3 +118,5 @@
 		{/if}
 	</div>
 </main>
+
+<BottomNav />

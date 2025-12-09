@@ -1,28 +1,14 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import BottomNav from '$lib/components/BottomNav.svelte';
+	import { EMOTION_EMOJI } from '$lib/constants';
+	import type { JournalSummary } from '$lib/types';
 
-	type Journal = {
-		id: string;
-		summary: string;
-		emotion: string;
-		image_url: string;
-		created_at: string;
-	};
-
-	let journals = $state<Journal[]>([]);
+	let journals = $state<JournalSummary[]>([]);
 	let currentDate = $state(new Date());
-	let selectedJournal = $state<Journal | null>(null);
+	let selectedJournal = $state<JournalSummary | null>(null);
 	let isLoading = $state(true);
-
-	// 감정 이모지 매핑
-	const emotionEmoji: Record<string, string> = {
-		joy: '😊',
-		sadness: '😢',
-		anger: '😤',
-		fear: '😨',
-		anxiety: '😰',
-		neutral: '😌'
-	};
 
 	onMount(async () => {
 		await loadJournals();
@@ -67,7 +53,7 @@
 	}
 
 	// 해당 날짜의 일기 찾기
-	function getJournalForDay(day: number): Journal | undefined {
+	function getJournalForDay(day: number): JournalSummary | undefined {
 		const year = currentDate.getFullYear();
 		const month = currentDate.getMonth();
 
@@ -110,13 +96,13 @@
 <main class="flex-1 flex flex-col px-4 py-6">
 	<!-- 헤더 -->
 	<div class="flex items-center justify-between mb-6">
-		<button onclick={prevMonth} class="p-2 hover:bg-gray-100 rounded-full">
+		<button onclick={prevMonth} class="p-2 hover:bg-gray-100 rounded-full" aria-label="이전 달">
 			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 			</svg>
 		</button>
 		<h1 class="text-xl font-semibold">{displayMonth}</h1>
-		<button onclick={nextMonth} class="p-2 hover:bg-gray-100 rounded-full">
+		<button onclick={nextMonth} class="p-2 hover:bg-gray-100 rounded-full" aria-label="다음 달">
 			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 			</svg>
@@ -150,7 +136,7 @@
 					{#if day}
 						<span class="{journal ? 'font-semibold' : ''} {dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : ''}">{day}</span>
 						{#if journal}
-							<span class="text-base mt-0.5">{emotionEmoji[journal.emotion] || '📝'}</span>
+							<span class="text-base mt-0.5">{EMOTION_EMOJI[journal.emotion] || '📝'}</span>
 						{/if}
 					{/if}
 				</button>
@@ -158,31 +144,49 @@
 		</div>
 	{/if}
 
-	<!-- 선택된 일기 미리보기 -->
+	<!-- 선택된 일기 미리보기 (모달) -->
 	{#if selectedJournal}
-		<div class="fixed inset-0 bg-black/50 flex items-end z-50" onclick={() => selectedJournal = null}>
-			<div
-				class="bg-white w-full rounded-t-3xl p-6 max-h-[80vh] overflow-auto"
-				onclick={(e) => e.stopPropagation()}
-			>
-				<div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-				<img
-					src={selectedJournal.image_url}
-					alt="일기 이미지"
-					class="w-full aspect-square object-cover rounded-2xl mb-4"
-				/>
-				<p class="text-lg mb-2">{selectedJournal.summary}</p>
-				<p class="text-sm text-(--color-text-light)">
-					{new Date(selectedJournal.created_at).toLocaleDateString('ko-KR', {
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric',
-						weekday: 'long'
-					})}
-				</p>
+		<!-- 배경 오버레이 -->
+		<div
+			class="fixed inset-0 bg-black/50 z-40"
+			onclick={() => (selectedJournal = null)}
+			onkeydown={(e) => e.key === 'Escape' && (selectedJournal = null)}
+			role="button"
+			tabindex="0"
+			aria-label="모달 닫기"
+		></div>
+		<!-- 모달 컨텐츠 -->
+		<div
+			class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-auto z-50"
+			role="dialog"
+			aria-modal="true"
+			aria-label="일기 미리보기"
+		>
+			<div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+			<img
+				src={selectedJournal.image_url}
+				alt="일기 이미지"
+				class="w-full aspect-square object-cover rounded-2xl mb-4"
+			/>
+			<p class="text-lg mb-2">{selectedJournal.summary}</p>
+			<p class="text-sm text-(--color-text-light)">
+				{new Date(selectedJournal.created_at).toLocaleDateString('ko-KR', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+					weekday: 'long'
+				})}
+			</p>
+			<div class="flex gap-3 mt-4">
 				<button
-					class="w-full mt-4 py-3 bg-(--color-primary) text-white rounded-xl font-medium"
-					onclick={() => selectedJournal = null}
+					class="flex-1 py-3 bg-(--color-primary) text-white rounded-xl font-medium"
+					onclick={() => goto(`/journal/${selectedJournal?.id}`)}
+				>
+					자세히 보기
+				</button>
+				<button
+					class="flex-1 py-3 bg-gray-100 text-(--color-text) rounded-xl font-medium"
+					onclick={() => (selectedJournal = null)}
 				>
 					닫기
 				</button>
@@ -191,25 +195,4 @@
 	{/if}
 </main>
 
-<!-- 하단 네비게이션 -->
-<nav class="flex justify-around py-4 border-t border-gray-200">
-	<a href="/" class="flex flex-col items-center text-(--color-text-light) hover:text-(--color-primary)">
-		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
-			/>
-		</svg>
-		<span class="text-xs mt-1">기록</span>
-	</a>
-	<a href="/calendar" class="flex flex-col items-center text-(--color-primary)">
-		<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-			<path
-				d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"
-			/>
-		</svg>
-		<span class="text-xs mt-1">캘린더</span>
-	</a>
-</nav>
+<BottomNav />
