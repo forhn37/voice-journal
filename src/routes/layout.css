@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+:root {
+	--color-bg: #FFF8F0;
+	--color-primary: #FF9F7A;
+	--color-primary-dark: #FF8A5C;
+	--color-text: #4A4A4A;
+	--color-text-light: #8A8A8A;
+}
+
+html, body {
+	height: 100%;
+	background-color: var(--color-bg);
+	color: var(--color-text);
+	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* 모바일 터치 최적화 */
+button, a {
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area for mobile */
+.safe-area-top {
+	padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+	padding-bottom: env(safe-area-inset-bottom);
+}

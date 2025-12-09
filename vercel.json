@@ -1,0 +1,14 @@
+{
+	"buildCommand": "npm run build",
+	"devCommand": "npm run dev",
+	"installCommand": "npm install",
+	"framework": "sveltekit",
+	"outputDirectory": ".svelte-kit",
+	"env": {
+		"OPENAI_API_KEY": "@openai_api_key",
+		"PUBLIC_SUPABASE_URL": "@public_supabase_url",
+		"PUBLIC_SUPABASE_PUBLISHABLE_KEY": "@public_supabase_publishable_key",
+		"SUPABASE_SECRET_KEY": "@supabase_secret_key",
+		"PUBLIC_SENTRY_DSN": "@public_sentry_dsn"
+	}
+}
