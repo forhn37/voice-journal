@@ -6,6 +6,8 @@
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
 	import type { Journal } from '$lib/types';
 
+	let { data: pageData } = $props();
+
 	let journal = $state<Journal | null>(null);
 	let isLoading = $state(true);
 	let errorMessage = $state('');
@@ -23,6 +25,12 @@
 	};
 
 	onMount(async () => {
+		// 로그인 체크
+		if (!pageData.user) {
+			goto('/login');
+			return;
+		}
+
 		const journalId = $page.params.id;
 
 		try {
@@ -73,48 +81,80 @@
 	<!-- 본문 -->
 	<div class="flex-1 overflow-auto px-6 py-6">
 		{#if isLoading}
-			<div class="flex items-center justify-center py-12">
-				<div
-					class="w-8 h-8 border-4 border-(--color-primary) border-t-transparent rounded-full animate-spin"
-				></div>
+			<!-- 스켈레톤 로딩 -->
+			<div class="animate-fade-in">
+				<!-- 이미지 스켈레톤 -->
+				<div class="rounded-2xl overflow-hidden mb-6">
+					<div class="w-full aspect-square skeleton"></div>
+				</div>
+				<!-- 날짜 스켈레톤 -->
+				<div class="h-4 w-40 skeleton mb-4"></div>
+				<!-- 요약 스켈레톤 -->
+				<div class="h-6 w-full skeleton mb-2"></div>
+				<div class="h-6 w-3/4 skeleton mb-4"></div>
+				<!-- 감정 스켈레톤 -->
+				<div class="flex items-center gap-2 mb-6">
+					<div class="w-8 h-8 rounded-full skeleton"></div>
+					<div class="h-4 w-16 skeleton"></div>
+				</div>
+				<!-- 전문 스켈레톤 -->
+				<div class="bg-white/50 rounded-2xl p-4 mb-6">
+					<div class="h-4 w-24 skeleton mb-3"></div>
+					<div class="h-4 w-full skeleton mb-2"></div>
+					<div class="h-4 w-full skeleton mb-2"></div>
+					<div class="h-4 w-2/3 skeleton"></div>
+				</div>
 			</div>
 		{:else if errorMessage}
-			<div class="text-center py-12">
-				<p class="text-6xl mb-4">😢</p>
-				<p class="text-lg text-(--color-text-light)">{errorMessage}</p>
+			<div class="flex flex-col items-center justify-center py-12 animate-fade-up">
+				<div class="relative mb-6">
+					<div class="absolute inset-0 bg-red-100 rounded-full scale-150 opacity-50"></div>
+					<div class="relative text-6xl animate-shake">🐻</div>
+				</div>
+				<p class="text-lg font-semibold text-(--color-text) mb-2">{errorMessage}</p>
+				<button onclick={handleBack} class="mt-4 px-6 py-3 btn-primary">
+					캘린더로 돌아가기
+				</button>
 			</div>
 		{:else if journal}
-			<!-- 이미지 -->
-			<div class="rounded-2xl overflow-hidden shadow-lg mb-6">
-				<img src={journal.image_url} alt="일기 그림" class="w-full aspect-square object-cover" />
-			</div>
-
-			<!-- 날짜 -->
-			<p class="text-sm text-(--color-text-light) mb-4">{formatDate(journal.created_at)}</p>
-
-			<!-- 요약 -->
-			<p class="text-lg mb-4">{journal.summary}</p>
-
-			<!-- 감정 -->
-			<div class="flex items-center gap-2 mb-6">
-				<span class="text-2xl">{EMOTION_EMOJI[journal.emotion] || '😌'}</span>
-				<span class="text-(--color-text-light)"
-					>{EMOTION_KOREAN[journal.emotion] || '평온'}</span
-				>
-			</div>
-
-			<!-- 전문 (transcript) -->
-			<div class="bg-white/50 rounded-2xl p-4 mb-6">
-				<p class="text-sm font-medium text-(--color-text-light) mb-2">내가 말한 내용</p>
-				<p class="text-base leading-relaxed">{journal.transcript}</p>
-			</div>
-
-			<!-- 캐릭터 메시지 -->
-			{#if journal.character_message}
-				<div class="bg-orange-50 rounded-2xl p-4 mb-6">
-					<p class="text-center">🐶 "{journal.character_message}"</p>
+			<div class="animate-fade-up">
+				<!-- 이미지 -->
+				<div class="relative rounded-2xl overflow-hidden shadow-lg mb-6">
+					<img src={journal.image_url} alt="일기 그림" class="w-full aspect-square object-cover" />
+					<!-- 감정 뱃지 -->
+					<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+						<span class="text-lg">{EMOTION_EMOJI[journal.emotion] || '😌'}</span>
+					</div>
 				</div>
-			{/if}
+
+				<!-- 날짜 및 감정 -->
+				<div class="flex items-center justify-between mb-4">
+					<p class="text-sm text-(--color-text-light)">{formatDate(journal.created_at)}</p>
+					<div class="flex items-center gap-1.5 px-3 py-1 bg-(--color-secondary) rounded-full">
+						<span class="text-base">{EMOTION_EMOJI[journal.emotion] || '😌'}</span>
+						<span class="text-sm font-medium text-(--color-text)">{EMOTION_KOREAN[journal.emotion] || '평온'}</span>
+					</div>
+				</div>
+
+				<!-- 요약 -->
+				<p class="text-lg font-medium leading-relaxed mb-6">{journal.summary}</p>
+
+				<!-- 전문 (transcript) -->
+				<div class="card p-5 mb-6">
+					<p class="text-sm font-semibold text-(--color-primary) mb-3">💬 내가 말한 내용</p>
+					<p class="text-base leading-relaxed text-(--color-text)">{journal.transcript}</p>
+				</div>
+
+				<!-- 캐릭터 메시지 -->
+				{#if journal.character_message}
+					<div class="bg-linear-to-r from-orange-50 to-amber-50 rounded-2xl p-5 mb-6 border border-orange-100">
+						<div class="flex items-start gap-3">
+							<span class="text-2xl">🐶</span>
+							<p class="text-base leading-relaxed italic text-(--color-text)">"{journal.character_message}"</p>
+						</div>
+					</div>
+				{/if}
+			</div>
 		{/if}
 	</div>
 </main>

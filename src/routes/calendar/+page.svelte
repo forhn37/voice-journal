@@ -2,8 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { EMOTION_EMOJI } from '$lib/constants';
 	import type { JournalSummary } from '$lib/types';
+
+	let { data } = $props();
 
 	let journals = $state<JournalSummary[]>([]);
 	let currentDate = $state(new Date());
@@ -11,6 +14,11 @@
 	let isLoading = $state(true);
 
 	onMount(async () => {
+		// 로그인 체크
+		if (!data.user) {
+			goto('/login');
+			return;
+		}
 		await loadJournals();
 	});
 
@@ -93,7 +101,7 @@
 	let displayMonth = $derived(`${currentDate.getFullYear()}년 ${monthNames[currentDate.getMonth()]}`);
 </script>
 
-<main class="flex-1 flex flex-col px-4 py-6">
+<main class="flex-1 flex flex-col px-4 py-6 overflow-y-auto">
 	<!-- 헤더 -->
 	<div class="flex items-center justify-between mb-6">
 		<button onclick={prevMonth} class="p-2 hover:bg-gray-100 rounded-full" aria-label="이전 달">
@@ -118,19 +126,22 @@
 
 	<!-- 캘린더 그리드 -->
 	{#if isLoading}
-		<div class="flex-1 flex items-center justify-center">
-			<div class="w-8 h-8 border-4 border-(--color-primary) border-t-transparent rounded-full animate-spin"></div>
+		<!-- 스켈레톤 로딩 -->
+		<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+			{#each Array(35) as _, i}
+				<div class="aspect-square skeleton"></div>
+			{/each}
 		</div>
 	{:else}
-		<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+		<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;" class="animate-fade-in">
 			{#each calendarDays as day, i}
 				{@const journal = day ? getJournalForDay(day) : undefined}
 				{@const dayOfWeek = i % 7}
 				<button
 					onclick={() => handleDayClick(day)}
-					class="aspect-square flex flex-col items-center justify-center rounded-xl text-sm
-						{day ? 'hover:bg-gray-100 cursor-pointer' : 'cursor-default'}
-						{journal ? 'bg-orange-100' : ''}"
+					class="aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all duration-200
+						{day ? 'hover:bg-(--color-surface-hover) hover:scale-105 cursor-pointer' : 'cursor-default'}
+						{journal ? 'bg-(--color-secondary) shadow-sm' : ''}"
 					disabled={!day}
 				>
 					{#if day}
@@ -142,13 +153,22 @@
 				</button>
 			{/each}
 		</div>
+
+		<!-- 이번 달 일기가 없으면 빈 상태 표시 -->
+		{#if journals.length === 0}
+			<EmptyState
+				type="calendar"
+				actionLabel="첫 일기 쓰러 가기"
+				onAction={() => goto('/')}
+			/>
+		{/if}
 	{/if}
 
 	<!-- 선택된 일기 미리보기 (모달) -->
 	{#if selectedJournal}
 		<!-- 배경 오버레이 -->
 		<div
-			class="fixed inset-0 bg-black/50 z-40"
+			class="fixed inset-0 bg-black/40 z-40 animate-fade-in"
 			onclick={() => (selectedJournal = null)}
 			onkeydown={(e) => e.key === 'Escape' && (selectedJournal = null)}
 			role="button"
@@ -157,18 +177,32 @@
 		></div>
 		<!-- 모달 컨텐츠 -->
 		<div
-			class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-auto z-50"
+			class="fixed inset-x-0 bottom-0 bg-(--color-surface) rounded-t-[28px] p-6 max-h-[80vh] overflow-auto z-50 animate-slide-up"
 			role="dialog"
 			aria-modal="true"
 			aria-label="일기 미리보기"
+			style="box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);"
 		>
-			<div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-			<img
-				src={selectedJournal.image_url}
-				alt="일기 이미지"
-				class="w-full aspect-square object-cover rounded-2xl mb-4"
-			/>
-			<p class="text-lg mb-2">{selectedJournal.summary}</p>
+			<!-- 핸들 바 -->
+			<div class="w-10 h-1 bg-(--color-text-muted) rounded-full mx-auto mb-5"></div>
+
+			<!-- 이미지 -->
+			<div class="relative rounded-2xl overflow-hidden shadow-lg mb-5">
+				<img
+					src={selectedJournal.image_url}
+					alt="일기 이미지"
+					class="w-full aspect-square object-cover"
+				/>
+				<!-- 감정 뱃지 -->
+				<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+					<span class="text-lg">{EMOTION_EMOJI[selectedJournal.emotion] || '📝'}</span>
+				</div>
+			</div>
+
+			<!-- 요약 -->
+			<p class="text-lg font-medium leading-relaxed mb-3">{selectedJournal.summary}</p>
+
+			<!-- 날짜 -->
 			<p class="text-sm text-(--color-text-light)">
 				{new Date(selectedJournal.created_at).toLocaleDateString('ko-KR', {
 					year: 'numeric',
@@ -177,15 +211,17 @@
 					weekday: 'long'
 				})}
 			</p>
-			<div class="flex gap-3 mt-4">
+
+			<!-- 버튼 -->
+			<div class="flex gap-3 mt-6">
 				<button
-					class="flex-1 py-3 bg-(--color-primary) text-white rounded-xl font-medium"
+					class="flex-1 py-3.5 btn-primary"
 					onclick={() => goto(`/journal/${selectedJournal?.id}`)}
 				>
 					자세히 보기
 				</button>
 				<button
-					class="flex-1 py-3 bg-gray-100 text-(--color-text) rounded-xl font-medium"
+					class="flex-1 py-3.5 bg-(--color-secondary) text-(--color-text) rounded-2xl font-medium transition-colors hover:bg-(--color-primary-light)"
 					onclick={() => (selectedJournal = null)}
 				>
 					닫기

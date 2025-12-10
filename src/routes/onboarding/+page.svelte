@@ -1,19 +1,59 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
+
+	let { data } = $props();
 
 	let step = $state(1);
 	let nickname = $state('');
 	let notificationTime = $state('21:00');
+	let loading = $state(false);
+	let error = $state('');
+
+	// 로그인 체크
+	onMount(() => {
+		if (!data.user) {
+			goto('/login');
+		}
+	});
 
 	// 온보딩 완료 처리
-	function completeOnboarding() {
-		if (browser) {
-			localStorage.setItem('onboarding_completed', 'true');
-			localStorage.setItem('nickname', nickname);
-			localStorage.setItem('notification_time', notificationTime);
+	async function completeOnboarding() {
+		loading = true;
+		error = '';
+
+		try {
+			// Supabase에 프로필 저장
+			const res = await fetch('/api/profile', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					nickname: nickname.trim(),
+					notificationTime: notificationTime || null
+				})
+			});
+
+			const result = await res.json();
+
+			if (!result.success) {
+				throw new Error(result.message || '프로필 저장에 실패했어요');
+			}
+
+			// 로컬스토리지에도 저장 (빠른 접근용)
+			if (browser) {
+				localStorage.setItem('onboarding_completed', 'true');
+				localStorage.setItem('nickname', nickname);
+				localStorage.setItem('notification_time', notificationTime);
+			}
+
+			goto('/');
+		} catch (e: unknown) {
+			const err = e as { message?: string };
+			error = err.message || '오류가 발생했어요';
+		} finally {
+			loading = false;
 		}
-		goto('/');
 	}
 
 	function nextStep() {
@@ -31,6 +71,13 @@
 </script>
 
 <main class="flex-1 flex flex-col items-center justify-center px-6">
+	<!-- 에러 메시지 -->
+	{#if error}
+		<div class="fixed top-4 left-4 right-4 bg-red-100 text-red-700 px-4 py-3 rounded-xl text-center z-50">
+			{error}
+		</div>
+	{/if}
+
 	<!-- Step 1: 환영 -->
 	{#if step === 1}
 		<div class="text-center animate-fade-in">
@@ -93,15 +140,22 @@
 
 			<button
 				class="w-full mt-6 py-4 bg-(--color-primary) text-white rounded-2xl font-medium
-					   hover:bg-(--color-primary-dark) transition-colors"
+					   hover:bg-(--color-primary-dark) transition-colors
+					   disabled:opacity-50 disabled:cursor-not-allowed"
 				onclick={nextStep}
+				disabled={loading}
 			>
+				{#if loading}
+					<span class="inline-block animate-spin mr-2">⏳</span>
+				{/if}
 				시작하기
 			</button>
 
 			<button
-				class="w-full mt-3 py-3 text-(--color-text-light) hover:text-(--color-text)"
+				class="w-full mt-3 py-3 text-(--color-text-light) hover:text-(--color-text)
+					   disabled:opacity-50 disabled:cursor-not-allowed"
 				onclick={skipNotification}
+				disabled={loading}
 			>
 				나중에 설정할게
 			</button>

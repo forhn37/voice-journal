@@ -4,7 +4,6 @@
 	import { browser } from '$app/environment';
 	import RecordButton from '$lib/components/RecordButton.svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
 	import type { AnalysisResult, UsageInfo } from '$lib/types';
 
@@ -32,33 +31,17 @@
 	// 사용량 정보
 	let usageInfo = $state<UsageInfo | null>(null);
 
-	// Confirm 모달 상태
-	let showConfirmModal = $state(false);
-	let pendingNavigation: (() => void) | null = null;
-
 	// 로딩 중 네비게이션 차단
 	beforeNavigate(({ cancel }) => {
 		// 로딩 중이거나 처리 중일 때
 		const isProcessing = pageStatus !== 'idle' && pageStatus !== 'completed' && pageStatus !== 'error';
 		if (isProcessing) {
-			// 네비게이션을 일단 취소하고 모달 표시
-			cancel();
-			showConfirmModal = true;
+			const confirmed = confirm('일기를 만드는 중이에요! 정말 나가시겠어요?\n\n진행 중인 작업이 사라집니다.');
+			if (!confirmed) {
+				cancel();
+			}
 		}
 	});
-
-	// Confirm 모달 확인
-	function handleConfirmLeave() {
-		showConfirmModal = false;
-		// 상태 초기화 후 실제로 페이지 이동
-		resetState();
-		// 여기서는 사용자가 직접 네비게이션 버튼을 다시 클릭하도록 함
-	}
-
-	// Confirm 모달 취소
-	function handleCancelLeave() {
-		showConfirmModal = false;
-	}
 
 	onMount(async () => {
 		// 로그인 체크
@@ -310,9 +293,9 @@
 				<p class="relative text-6xl animate-float">🐶</p>
 			</div>
 			<h1 class="text-2xl font-semibold mb-2 text-(--color-text)">
-				{#if nickname}{nickname},{/if} 오늘 하루
+				{#if nickname}{nickname}아,{/if} 오늘 하루
 			</h1>
-			<p class="text-xl text-(--color-text)">어땠어?</p>
+			<p class="text-xl text-(--color-text-light)">어땠어?</p>
 		</div>
 
 		<!-- 사용량 표시 -->
@@ -469,17 +452,3 @@
 </main>
 
 <BottomNav />
-
-<!-- Confirm 모달 -->
-<ConfirmModal
-	show={showConfirmModal}
-	title="잠깐!"
-	message={`일기를 만드는 중이에요!
-정말 나가시겠어요?
-
-진행 중인 작업이 사라집니다.`}
-	confirmText="나갈게요"
-	cancelText="계속 작업할게요"
-	onConfirm={handleConfirmLeave}
-	onCancel={handleCancelLeave}
-/>
