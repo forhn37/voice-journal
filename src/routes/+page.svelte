@@ -6,42 +6,32 @@
 	import BottomNav from '$lib/components/BottomNav.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
-	import type { AnalysisResult, UsageInfo } from '$lib/types';
+	import { journalCreationStore } from '$lib/stores/journalCreation.svelte';
+	import type { UsageInfo } from '$lib/types';
 
 	let { data } = $props();
 
-	// 페이지 상태
-	type PageStatus = 'idle' | 'transcribing' | 'analyzing' | 'generating' | 'saving' | 'completed' | 'error';
-	type ErrorStep = 'transcribing' | 'analyzing' | 'generating' | 'saving' | null;
-
+	// 닉네임 (로컬)
 	let nickname = $state('');
-	let errorMessage = $state('');
-	let pageStatus = $state<PageStatus>('idle');
-	let errorStep = $state<ErrorStep>(null); // 에러 발생 단계
-
-	// 결과 데이터
-	let transcript = $state('');
-	let audioDuration = $state(0);
-	let analysisResult = $state<AnalysisResult | null>(null);
-	let imageUrl = $state('');
-	let savedJournalId = $state<string | null>(null);
-
-	// 재시도용 데이터
-	let lastRecordingBlob = $state<Blob | null>(null);
 
 	// 사용량 정보
 	let usageInfo = $state<UsageInfo | null>(null);
 
 	// Confirm 모달 상태
 	let showConfirmModal = $state(false);
-	let pendingNavigation: (() => void) | null = null;
+
+	// 전역 스토어에서 파생된 상태
+	let pageStatus = $derived(journalCreationStore.status);
+	let errorStep = $derived(journalCreationStore.errorStep);
+	let errorMessage = $derived(journalCreationStore.errorMessage);
+	let transcript = $derived(journalCreationStore.transcript);
+	let audioDuration = $derived(journalCreationStore.audioDuration);
+	let analysisResult = $derived(journalCreationStore.analysisResult);
+	let imageUrl = $derived(journalCreationStore.imageUrl);
 
 	// 로딩 중 네비게이션 차단
 	beforeNavigate(({ cancel }) => {
-		// 로딩 중이거나 처리 중일 때
-		const isProcessing = pageStatus !== 'idle' && pageStatus !== 'completed' && pageStatus !== 'error';
-		if (isProcessing) {
-			// 네비게이션을 일단 취소하고 모달 표시
+		if (journalCreationStore.isProcessing) {
 			cancel();
 			showConfirmModal = true;
 		}
@@ -50,9 +40,7 @@
 	// Confirm 모달 확인
 	function handleConfirmLeave() {
 		showConfirmModal = false;
-		// 상태 초기화 후 실제로 페이지 이동
-		resetState();
-		// 여기서는 사용자가 직접 네비게이션 버튼을 다시 클릭하도록 함
+		journalCreationStore.reset();
 	}
 
 	// Confirm 모달 취소
@@ -101,27 +89,32 @@
 
 	// 일기 저장 함수 (성공 여부 반환)
 	async function saveJournal(): Promise<boolean> {
-		if (!analysisResult || !imageUrl) return false;
+		const currentAnalysis = journalCreationStore.analysisResult;
+		const currentImageUrl = journalCreationStore.imageUrl;
+		const currentTranscript = journalCreationStore.transcript;
+		const currentDuration = journalCreationStore.audioDuration;
+
+		if (!currentAnalysis || !currentImageUrl) return false;
 
 		try {
 			const res = await fetch('/api/journal', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					transcript,
-					summary: analysisResult.summary,
-					emotion: analysisResult.emotion,
-					emotionScore: analysisResult.emotionScore,
-					scene: analysisResult.scene,
-					characterMessage: analysisResult.characterMessage,
-					imageUrl,
-					audioDuration
+					transcript: currentTranscript,
+					summary: currentAnalysis.summary,
+					emotion: currentAnalysis.emotion,
+					emotionScore: currentAnalysis.emotionScore,
+					scene: currentAnalysis.scene,
+					characterMessage: currentAnalysis.characterMessage,
+					imageUrl: currentImageUrl,
+					audioDuration: currentDuration
 				})
 			});
-			const data = await res.json();
+			const result = await res.json();
 
-			if (data.success) {
-				savedJournalId = data.journal.id;
+			if (result.success) {
+				journalCreationStore.setCompleted(result.journal.id);
 				return true;
 			}
 			return false;
@@ -133,10 +126,8 @@
 
 	// 녹음 완료 핸들러 - 전체 플로우 실행
 	async function handleRecordingComplete(blob: Blob, duration: number) {
-		audioDuration = duration;
-		lastRecordingBlob = blob; // 재시도용 저장
-		errorStep = null;
-		errorMessage = '';
+		journalCreationStore.setTranscript('', duration);
+		journalCreationStore.setRecordingBlob(blob);
 
 		// 사용량 체크
 		if (usageInfo && !usageInfo.canCreate) {
@@ -147,19 +138,23 @@
 		await runJournalFlow('transcribing');
 	}
 
+	// ErrorStep 타입 정의
+	type ErrorStep = 'transcribing' | 'analyzing' | 'generating' | 'saving' | null;
+
 	// 단계별 일기 생성 플로우
 	async function runJournalFlow(startFrom: ErrorStep) {
 		try {
 			// Step 1: STT (Whisper)
 			if (startFrom === 'transcribing') {
-				pageStatus = 'transcribing';
+				journalCreationStore.setStatus('transcribing');
 
-				if (!lastRecordingBlob) {
+				const recordingBlob = journalCreationStore.lastRecordingBlob;
+				if (!recordingBlob) {
 					throw new Error('녹음 데이터가 없어요. 다시 녹음해주세요.');
 				}
 
 				const formData = new FormData();
-				formData.append('audio', lastRecordingBlob, 'recording.webm');
+				formData.append('audio', recordingBlob, 'recording.webm');
 
 				const sttRes = await fetch('/api/transcribe', {
 					method: 'POST',
@@ -168,136 +163,127 @@
 				const sttData = await sttRes.json();
 
 				if (!sttData.success) {
-					errorStep = 'transcribing';
-					throw new Error(sttData.message || '음성 인식에 실패했어요');
+					journalCreationStore.setError('transcribing', sttData.message || '음성 인식에 실패했어요');
+					return;
 				}
 
-				transcript = sttData.transcript;
+				journalCreationStore.setTranscript(sttData.transcript, journalCreationStore.audioDuration);
 			}
 
 			// Step 2: GPT 분석
 			if (startFrom === 'transcribing' || startFrom === 'analyzing') {
-				pageStatus = 'analyzing';
+				journalCreationStore.setStatus('analyzing');
 
+				const currentTranscript = journalCreationStore.transcript;
 				const analyzeRes = await fetch('/api/analyze', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ transcript })
+					body: JSON.stringify({ transcript: currentTranscript })
 				});
 				const analyzeData = await analyzeRes.json();
 
 				if (!analyzeData.success) {
-					errorStep = 'analyzing';
-					throw new Error(analyzeData.message || 'AI 분석에 실패했어요');
+					journalCreationStore.setError('analyzing', analyzeData.message || 'AI 분석에 실패했어요');
+					return;
 				}
 
-				analysisResult = {
+				journalCreationStore.setAnalysis({
 					scene: analyzeData.scene,
 					emotion: analyzeData.emotion,
 					emotionScore: analyzeData.emotionScore,
 					summary: analyzeData.summary,
 					characterMessage: analyzeData.characterMessage
-				};
+				});
 			}
 
 			// Step 3: DALL-E 이미지 생성
 			if (startFrom === 'transcribing' || startFrom === 'analyzing' || startFrom === 'generating') {
-				pageStatus = 'generating';
+				journalCreationStore.setStatus('generating');
 
-				if (!analysisResult) {
-					errorStep = 'analyzing';
-					throw new Error('분석 결과가 없어요. 다시 시도해주세요.');
+				const currentAnalysis = journalCreationStore.analysisResult;
+				if (!currentAnalysis) {
+					journalCreationStore.setError('analyzing', '분석 결과가 없어요. 다시 시도해주세요.');
+					return;
 				}
 
 				const imageRes = await fetch('/api/generate-image', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						scene: analysisResult.scene,
-						emotion: analysisResult.emotion
+						scene: currentAnalysis.scene,
+						emotion: currentAnalysis.emotion
 					})
 				});
 				const imageData = await imageRes.json();
 
 				if (!imageData.success) {
-					errorStep = 'generating';
-					throw new Error(imageData.message || '그림 생성에 실패했어요');
+					journalCreationStore.setError('generating', imageData.message || '그림 생성에 실패했어요');
+					return;
 				}
 
-				imageUrl = imageData.imageUrl;
+				journalCreationStore.setImage(imageData.imageUrl);
 			}
 
 			// Step 4: DB에 저장
 			if (startFrom === 'transcribing' || startFrom === 'analyzing' || startFrom === 'generating' || startFrom === 'saving') {
-				pageStatus = 'saving';
+				journalCreationStore.setStatus('saving');
 				const saved = await saveJournal();
 				if (!saved) {
-					errorStep = 'saving';
-					throw new Error('저장에 실패했어요');
+					journalCreationStore.setError('saving', '저장에 실패했어요');
+					return;
 				}
 			}
 
 			// 사용량 다시 로드
 			await loadUsage();
 
-			// 완료
-			errorStep = null;
-			pageStatus = 'completed';
 		} catch (err) {
-			errorMessage = err instanceof Error ? err.message : '오류가 발생했어요';
-			pageStatus = 'error';
+			journalCreationStore.setError(null, err instanceof Error ? err.message : '오류가 발생했어요');
 		}
 	}
 
 	// 재시도 핸들러
 	async function handleRetry() {
-		if (!errorStep) {
-			// 에러 단계가 없으면 처음부터
-			pageStatus = 'idle';
+		const currentErrorStep = journalCreationStore.errorStep;
+		if (!currentErrorStep) {
+			journalCreationStore.reset();
 			return;
 		}
-		errorMessage = '';
-		await runJournalFlow(errorStep);
+		journalCreationStore.clearError();
+		await runJournalFlow(currentErrorStep);
 	}
 
 	// 처음부터 다시 시작
 	function handleStartOver() {
-		resetState();
+		journalCreationStore.reset();
 	}
 
 	// 다시 시작
 	async function resetState() {
-		pageStatus = 'idle';
-		transcript = '';
-		audioDuration = 0;
-		analysisResult = null;
-		imageUrl = '';
-		savedJournalId = null;
-		lastRecordingBlob = null;
-		errorStep = null;
-		errorMessage = '';
-
-		// 사용량 다시 로드
+		journalCreationStore.reset();
 		await loadUsage();
 	}
 
-	// 에러 핸들러
+	// 토스트 에러 메시지 (사용량 초과 등)
+	let toastMessage = $state('');
+
+	// 에러 핸들러 (토스트용)
 	function handleError(message: string) {
-		errorMessage = message;
+		toastMessage = message;
 		setTimeout(() => {
-			errorMessage = '';
+			toastMessage = '';
 		}, 3000);
 	}
 
 </script>
 
 <main class="flex-1 flex flex-col items-center justify-center px-6 pb-8 overflow-y-auto">
-	<!-- 에러 토스트 (idle 상태에서만 - 사용량 초과 등) -->
-	{#if errorMessage && pageStatus === 'idle'}
+	<!-- 토스트 메시지 (사용량 초과 등) -->
+	{#if toastMessage && pageStatus === 'idle'}
 		<div
 			class="fixed top-4 left-4 right-4 bg-red-100 text-red-700 px-4 py-3 rounded-xl text-center z-50"
 		>
-			{errorMessage}
+			{toastMessage}
 		</div>
 	{/if}
 
