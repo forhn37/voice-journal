@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { goto, beforeNavigate } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import RecordButton from '$lib/components/RecordButton.svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
 	import { journalCreationStore } from '$lib/stores/journalCreation.svelte';
 	import type { UsageInfo } from '$lib/types';
@@ -17,36 +16,12 @@
 	// 사용량 정보
 	let usageInfo = $state<UsageInfo | null>(null);
 
-	// Confirm 모달 상태
-	let showConfirmModal = $state(false);
-
 	// 전역 스토어에서 파생된 상태
 	let pageStatus = $derived(journalCreationStore.status);
 	let errorStep = $derived(journalCreationStore.errorStep);
 	let errorMessage = $derived(journalCreationStore.errorMessage);
-	let transcript = $derived(journalCreationStore.transcript);
-	let audioDuration = $derived(journalCreationStore.audioDuration);
 	let analysisResult = $derived(journalCreationStore.analysisResult);
 	let imageUrl = $derived(journalCreationStore.imageUrl);
-
-	// 로딩 중 네비게이션 차단
-	beforeNavigate(({ cancel }) => {
-		if (journalCreationStore.isProcessing) {
-			cancel();
-			showConfirmModal = true;
-		}
-	});
-
-	// Confirm 모달 확인
-	function handleConfirmLeave() {
-		showConfirmModal = false;
-		journalCreationStore.reset();
-	}
-
-	// Confirm 모달 취소
-	function handleCancelLeave() {
-		showConfirmModal = false;
-	}
 
 	onMount(async () => {
 		// 로그인 체크
@@ -455,17 +430,3 @@
 </main>
 
 <BottomNav />
-
-<!-- Confirm 모달 -->
-<ConfirmModal
-	show={showConfirmModal}
-	title="잠깐!"
-	message={`일기를 만드는 중이에요!
-정말 나가시겠어요?
-
-진행 중인 작업이 사라집니다.`}
-	confirmText="나갈게요"
-	cancelText="계속 작업할게요"
-	onConfirm={handleConfirmLeave}
-	onCancel={handleCancelLeave}
-/>
