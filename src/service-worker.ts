@@ -51,20 +51,18 @@ sw.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// 내부 API 요청은 네트워크 우선
-	if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
-		event.respondWith(
-			fetch(event.request).catch(() => {
-				return new Response(
-					JSON.stringify({ success: false, error: 'OFFLINE', message: '오프라인 상태예요' }),
-					{ headers: { 'Content-Type': 'application/json' } }
-				);
-			})
-		);
+	// 모든 API 요청과 데이터 요청은 서비스 워커가 처리하지 않음 (네트워크 직접 사용)
+	if (
+		url.pathname.startsWith('/api/') ||
+		url.pathname.startsWith('/auth/') ||
+		url.pathname.includes('__data.json') ||
+		event.request.method !== 'GET'
+	) {
+		// 서비스 워커가 처리하지 않고 네트워크로 직접 전달
 		return;
 	}
 
-	// 정적 리소스는 캐시 우선
+	// GET 요청만 캐시 사용
 	if (event.request.method === 'GET') {
 		event.respondWith(
 			caches.match(event.request).then((cached) => {
