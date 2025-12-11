@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
-	import { invalidate, navigating } from '$app/navigation';
+	import { invalidate } from '$app/navigation';
+	import { navigating } from '$app/stores';
 	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
