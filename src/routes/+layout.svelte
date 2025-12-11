@@ -1,6 +1,6 @@
 <script lang="ts">
 	import './layout.css';
-	import { invalidate } from '$app/navigation';
+	import { invalidate, navigating } from '$app/navigation';
 	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
@@ -26,5 +26,18 @@
 </svelte:head>
 
 <div class="h-screen flex flex-col safe-area-top safe-area-bottom overflow-hidden">
+	<!-- 페이지 전환 로딩 바 -->
+	{#if $navigating}
+		<div class="fixed top-0 left-0 right-0 h-1 bg-linear-to-r from-purple-500 via-pink-500 to-purple-500 animate-pulse z-50" style="animation: loading 1.5s ease-in-out infinite;"></div>
+	{/if}
+
 	{@render children()}
 </div>
+
+<style>
+	@keyframes loading {
+		0% { transform: translateX(-100%); }
+		50% { transform: translateX(0); }
+		100% { transform: translateX(100%); }
+	}
+</style>

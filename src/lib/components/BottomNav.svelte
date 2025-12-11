@@ -44,6 +44,7 @@
 	</a>
 	<a
 		href="/calendar"
+		data-sveltekit-preload-data="hover"
 		class="relative flex flex-col items-center px-6 py-2 rounded-xl transition-all duration-200
 			{currentPath === '/calendar' || currentPath.startsWith('/journal/')
 			? 'text-(--color-primary)'
@@ -73,6 +74,7 @@
 	</a>
 	<a
 		href="/settings"
+		data-sveltekit-preload-data="hover"
 		class="relative flex flex-col items-center px-6 py-2 rounded-xl transition-all duration-200
 			{currentPath === '/settings'
 			? 'text-(--color-primary)'

@@ -3,5 +3,6 @@
 	"devCommand": "npm run dev",
 	"installCommand": "npm install",
 	"framework": "sveltekit",
-	"outputDirectory": ".svelte-kit"
+	"outputDirectory": ".svelte-kit",
+	"regions": ["icn1"]
 }
