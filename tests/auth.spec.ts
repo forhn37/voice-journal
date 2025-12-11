@@ -49,15 +49,11 @@ test.describe('인증 플로우', () => {
 		// 회원가입 탭 클릭
 		await page.getByRole('button', { name: '회원가입' }).click();
 
-		// 애니메이션 대기
-		await page.waitForTimeout(300);
+		// 비밀번호 확인 필드가 보일 때까지 대기 (회원가입 모드에서만 표시됨)
+		await expect(page.locator('#passwordConfirm')).toBeVisible({ timeout: 10000 });
 
-		// 회원가입 폼 확인 (폼 내부의 제출 버튼 확인)
+		// 버튼 텍스트가 "회원가입"으로 바뀌었는지 확인
 		const submitButton = page.locator('form button[type="submit"]');
-		await expect(submitButton).toBeVisible({ timeout: 10000 });
-
-		// 버튼 텍스트에 "회원가입" 또는 "가입" 포함 확인
-		const buttonText = await submitButton.textContent();
-		expect(buttonText).toMatch(/회원가입|가입/);
+		await expect(submitButton).toContainText('회원가입');
 	});
 });

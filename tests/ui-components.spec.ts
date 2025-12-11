@@ -11,25 +11,22 @@ test.describe('UI 컴포넌트', () => {
 		// 회원가입 탭으로 전환
 		const signupTab = page.getByRole('button', { name: '회원가입' });
 		await signupTab.click();
-		await page.waitForTimeout(300);
 
-		// 회원가입 폼이 표시되는지 확인
-		const signupButton = page.locator('form button[type="submit"]');
-		await expect(signupButton).toBeVisible({ timeout: 10000 });
+		// 비밀번호 확인 필드가 보일 때까지 대기 (회원가입 모드에서만 표시됨)
+		await expect(page.locator('#passwordConfirm')).toBeVisible({ timeout: 10000 });
 
-		const signupText = await signupButton.textContent();
-		expect(signupText).toMatch(/회원가입|가입/);
+		// 버튼 텍스트 확인
+		const submitButton = page.locator('form button[type="submit"]');
+		await expect(submitButton).toContainText('회원가입');
 
 		// 다시 로그인 탭으로 전환
 		await loginTab.click();
-		await page.waitForTimeout(300);
 
-		// 로그인 폼이 표시되는지 확인
-		const loginButton = page.locator('form button[type="submit"]');
-		await expect(loginButton).toBeVisible({ timeout: 10000 });
+		// 비밀번호 확인 필드가 사라질 때까지 대기 (로그인 모드에서는 숨겨짐)
+		await expect(page.locator('#passwordConfirm')).not.toBeVisible({ timeout: 10000 });
 
-		const loginText = await loginButton.textContent();
-		expect(loginText).toMatch(/로그인/);
+		// 버튼 텍스트 확인
+		await expect(submitButton).toContainText('로그인');
 	});
 
 	test('이메일 입력 필드 검증', async ({ page }) => {
@@ -158,11 +155,15 @@ test.describe('페이지 메타데이터', () => {
 
 	test('개인정보처리방침 페이지 타이틀', async ({ page }) => {
 		await page.goto('/legal/privacy-policy');
+		// h1이 로드될 때까지 대기 (페이지가 완전히 렌더링됨을 보장)
+		await expect(page.locator('h1')).toBeVisible();
 		await expect(page).toHaveTitle(/개인정보처리방침/i);
 	});
 
 	test('이용약관 페이지 타이틀', async ({ page }) => {
 		await page.goto('/legal/terms-of-service');
+		// h1이 로드될 때까지 대기 (페이지가 완전히 렌더링됨을 보장)
+		await expect(page.locator('h1')).toBeVisible();
 		await expect(page).toHaveTitle(/이용약관/i);
 	});
 });

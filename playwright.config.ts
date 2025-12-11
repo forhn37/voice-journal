@@ -4,8 +4,8 @@ export default defineConfig({
 	// 테스트 파일 위치
 	testDir: './tests',
 
-	// 각 테스트 타임아웃 (30초)
-	timeout: 30000,
+	// 각 테스트 타임아웃 (60초 - Firefox가 느릴 수 있음)
+	timeout: 60000,
 
 	// 병렬 실행 설정
 	fullyParallel: true,
