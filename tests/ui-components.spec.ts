@@ -1,0 +1,158 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('UI 컴포넌트', () => {
+	test('로그인 페이지 탭 전환', async ({ page }) => {
+		await page.goto('/login');
+
+		// 로그인 탭이 기본으로 활성화
+		const loginTab = page.getByRole('button', { name: '로그인', exact: true }).first();
+		await expect(loginTab).toBeVisible();
+
+		// 회원가입 탭으로 전환
+		const signupTab = page.getByRole('button', { name: '회원가입' });
+		await signupTab.click();
+
+		// 회원가입 폼이 표시되는지 확인
+		await expect(page.locator('form button[type="submit"]', { hasText: '회원가입' })).toBeVisible();
+
+		// 다시 로그인 탭으로 전환
+		await loginTab.click();
+
+		// 로그인 폼이 표시되는지 확인
+		await expect(page.locator('form button[type="submit"]', { hasText: '로그인' })).toBeVisible();
+	});
+
+	test('이메일 입력 필드 검증', async ({ page }) => {
+		await page.goto('/login');
+
+		const emailInput = page.getByRole('textbox', { name: /이메일/i });
+
+		// Placeholder 확인
+		await expect(emailInput).toHaveAttribute('placeholder', /email/i);
+
+		// Type 확인
+		await expect(emailInput).toHaveAttribute('type', 'email');
+
+		// 값 입력
+		await emailInput.fill('test@example.com');
+		await expect(emailInput).toHaveValue('test@example.com');
+	});
+
+	test('비밀번호 입력 필드 검증', async ({ page }) => {
+		await page.goto('/login');
+
+		const passwordInput = page.locator('input[type="password"]');
+
+		// Type 확인
+		await expect(passwordInput).toHaveAttribute('type', 'password');
+
+		// Placeholder 확인
+		await expect(passwordInput).toHaveAttribute('placeholder');
+
+		// 값 입력
+		await passwordInput.fill('myPassword123');
+		await expect(passwordInput).toHaveValue('myPassword123');
+	});
+
+	test('Google 로그인 버튼 (준비 중 상태)', async ({ page }) => {
+		await page.goto('/login');
+
+		// Google 로그인 버튼 확인
+		const googleButton = page.getByRole('button', { name: /Google 로그인/i });
+		await expect(googleButton).toBeVisible();
+
+		// 비활성화 상태 확인
+		await expect(googleButton).toBeDisabled();
+
+		// "준비 중" 텍스트 확인
+		await expect(googleButton).toContainText(/준비 중/i);
+	});
+});
+
+test.describe('법적 문서 페이지', () => {
+	test('개인정보처리방침 - 모든 섹션 표시', async ({ page }) => {
+		await page.goto('/legal/privacy-policy');
+
+		// 주요 섹션 제목 확인
+		const sections = [
+			'제1조',
+			'제2조',
+			'제3조',
+			'제4조',
+			'제5조',
+			'제6조',
+			'제7조',
+			'제8조',
+			'제9조',
+			'제10조'
+		];
+
+		for (const section of sections) {
+			await expect(page.locator('h2', { hasText: section })).toBeVisible();
+		}
+	});
+
+	test('이용약관 - 모든 섹션 표시', async ({ page }) => {
+		await page.goto('/legal/terms-of-service');
+
+		// 주요 섹션 제목 확인
+		const sections = [
+			'제1조',
+			'제2조',
+			'제3조',
+			'제4조',
+			'제5조',
+			'제6조',
+			'제7조',
+			'제8조',
+			'제9조',
+			'제10조',
+			'제11조'
+		];
+
+		for (const section of sections) {
+			await expect(page.locator('h2', { hasText: section })).toBeVisible();
+		}
+	});
+
+	test('설정으로 돌아가기 링크', async ({ page }) => {
+		// 개인정보처리방침
+		await page.goto('/legal/privacy-policy');
+
+		const backLink = page.getByRole('link', { name: /설정으로 돌아가기/i });
+		await expect(backLink).toBeVisible();
+		await expect(backLink).toHaveAttribute('href', '/settings');
+
+		// 이용약관
+		await page.goto('/legal/terms-of-service');
+
+		const backLink2 = page.getByRole('link', { name: /설정으로 돌아가기/i });
+		await expect(backLink2).toBeVisible();
+		await expect(backLink2).toHaveAttribute('href', '/settings');
+	});
+
+	test('최종 업데이트 날짜 표시', async ({ page }) => {
+		await page.goto('/legal/privacy-policy');
+
+		// 최종 업데이트 날짜 확인
+		await expect(page.locator('text=/최종 업데이트|마지막 업데이트/i')).toBeVisible();
+		await expect(page.locator('text=/2025년 12월 11일/i')).toBeVisible();
+	});
+});
+
+test.describe('페이지 메타데이터', () => {
+	test('로그인 페이지 타이틀', async ({ page }) => {
+		await page.goto('/login');
+		await expect(page).toHaveTitle(/Voice Journal/i);
+	});
+
+	test('개인정보처리방침 페이지 타이틀', async ({ page }) => {
+		await page.goto('/legal/privacy-policy');
+		await expect(page).toHaveTitle(/개인정보처리방침/i);
+	});
+
+	test('이용약관 페이지 타이틀', async ({ page }) => {
+		await page.goto('/legal/terms-of-service');
+		await expect(page).toHaveTitle(/이용약관/i);
+	});
+});
