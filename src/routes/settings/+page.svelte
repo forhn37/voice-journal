@@ -142,6 +142,25 @@
 		</div>
 	</section>
 
+	<!-- 법적 문서 섹션 -->
+	<section class="card p-5 mb-4">
+		<h2 class="text-sm font-semibold text-(--color-text-light) mb-4">법적 문서</h2>
+
+		<a
+			href="/legal/privacy-policy"
+			class="block py-3 border-b border-gray-100 text-base text-(--color-text) hover:text-(--color-primary) transition-colors"
+		>
+			개인정보처리방침
+		</a>
+
+		<a
+			href="/legal/terms-of-service"
+			class="block py-3 text-base text-(--color-text) hover:text-(--color-primary) transition-colors"
+		>
+			이용약관
+		</a>
+	</section>
+
 	<!-- 계정 관리 섹션 -->
 	<section class="card p-5 mb-4">
 		<h2 class="text-sm font-semibold text-(--color-text-light) mb-4">계정</h2>
