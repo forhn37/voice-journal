@@ -6,12 +6,12 @@ test.describe('접근성 (Accessibility)', () => {
 
 		// 이메일 input에 포커스
 		const emailInput = page.getByRole('textbox', { name: /이메일/i });
-		await emailInput.click();
+		await emailInput.focus();
 		await expect(emailInput).toBeFocused();
 
 		// Tab 키로 비밀번호로 이동
 		await page.keyboard.press('Tab');
-		const passwordInput = page.locator('input[type="password"]');
+		const passwordInput = page.locator('input[type="password"]').first();
 		await expect(passwordInput).toBeFocused();
 
 		// Tab 키로 로그인 버튼으로 이동

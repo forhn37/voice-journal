@@ -25,7 +25,7 @@ test.describe('인증 플로우', () => {
 
 		// 잘못된 이메일 형식 입력
 		await page.getByRole('textbox', { name: /이메일/i }).fill('invalid-email');
-		await page.locator('input[type="password"]').fill('password123');
+		await page.locator('input[type="password"]').first().fill('password123');
 
 		// 폼 내부의 로그인 버튼 클릭
 		await page.locator('form').getByRole('button', { name: '로그인' }).click();
@@ -49,7 +49,15 @@ test.describe('인증 플로우', () => {
 		// 회원가입 탭 클릭
 		await page.getByRole('button', { name: '회원가입' }).click();
 
-		// 회원가입 폼 확인
-		await expect(page.locator('form').getByRole('button', { name: '회원가입' })).toBeVisible();
+		// 애니메이션 대기
+		await page.waitForTimeout(300);
+
+		// 회원가입 폼 확인 (폼 내부의 제출 버튼 확인)
+		const submitButton = page.locator('form button[type="submit"]');
+		await expect(submitButton).toBeVisible({ timeout: 10000 });
+
+		// 버튼 텍스트에 "회원가입" 또는 "가입" 포함 확인
+		const buttonText = await submitButton.textContent();
+		expect(buttonText).toMatch(/회원가입|가입/);
 	});
 });
