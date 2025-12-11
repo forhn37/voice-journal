@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto, beforeNavigate } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import RecordButton from '$lib/components/RecordButton.svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
@@ -11,11 +10,23 @@
 
 	let { data } = $props();
 
-	// 닉네임 (로컬)
-	let nickname = $state('');
+	// 서버에서 미리 로드된 데이터
+	let nickname = $state(data.profile?.nickname || '');
+	let usageInfo = $state<UsageInfo>(data.usage);
+	let streak = $state(data.streak || 0);
 
-	// 사용량 정보
-	let usageInfo = $state<UsageInfo | null>(null);
+	// 스트릭 마일스톤 계산
+	function getStreakMilestone(days: number): { next: number; emoji: string } | null {
+		const milestones = [7, 30, 100, 365];
+		for (const m of milestones) {
+			if (days < m) {
+				return { next: m, emoji: m === 7 ? '🔥' : m === 30 ? '⭐' : m === 100 ? '💎' : '👑' };
+			}
+		}
+		return null;
+	}
+
+	let streakMilestone = $derived(getStreakMilestone(streak));
 
 	// Confirm 모달 상태
 	let showConfirmModal = $state(false);
@@ -46,39 +57,24 @@
 		showConfirmModal = false;
 	}
 
-	onMount(async () => {
-		// 로그인 체크
-		if (!data.user) {
-			goto('/login');
-			return;
-		}
-
-		// 온보딩 체크 (로컬스토리지 - 추후 DB로 변경)
-		const completed = localStorage.getItem('onboarding_completed');
-		if (!completed) {
-			goto('/onboarding');
-			return;
-		}
-		nickname = localStorage.getItem('nickname') || '';
-
-		// 사용량 로드
-		await loadUsage();
-	});
-
-	// 사용량 로드
+	// 사용량 및 스트릭 로드 (일기 생성 후 갱신용)
 	async function loadUsage() {
-		if (!browser) return; // 브라우저에서만 실행
+		if (!browser) return;
 
 		try {
 			const res = await fetch('/api/usage');
-			const data = await res.json();
-			if (data.success) {
+			const result = await res.json();
+			if (result.success) {
 				usageInfo = {
-					used: data.used,
-					limit: data.limit,
-					remaining: data.remaining,
-					canCreate: data.canCreate
+					used: result.used,
+					limit: result.limit,
+					remaining: result.remaining,
+					canCreate: result.canCreate
 				};
+				// 스트릭도 갱신
+				if (result.streak !== undefined) {
+					streak = result.streak;
+				}
 			}
 		} catch (err) {
 			console.error('사용량 조회 실패:', err);
@@ -115,6 +111,8 @@
 				journalCreationStore.setCompleted(result.journal.id);
 				return true;
 			}
+			// 저장 실패 시 에러 로그
+			console.error('일기 저장 API 실패:', result);
 			return false;
 		} catch (err) {
 			console.error('일기 저장 실패:', err);
@@ -127,7 +125,7 @@
 		journalCreationStore.setTranscript('', duration);
 		journalCreationStore.setRecordingBlob(blob);
 
-		// 사용량 체크
+		// 사용량 체크 (녹음 시작 시점에서도 체크하지만, 안전장치로 유지)
 		if (usageInfo && !usageInfo.canCreate) {
 			handleError('오늘은 여기까지! 내일 다시 이야기 들려줘 🐶');
 			return;
@@ -222,18 +220,10 @@
 				journalCreationStore.setImage(imageData.imageUrl);
 			}
 
-			// Step 4: DB에 저장
-			if (startFrom === 'transcribing' || startFrom === 'analyzing' || startFrom === 'generating' || startFrom === 'saving') {
-				journalCreationStore.setStatus('saving');
-				const saved = await saveJournal();
-				if (!saved) {
-					journalCreationStore.setError('saving', '저장에 실패했어요');
-					return;
-				}
+			// Step 4: 미리보기 상태로 전환 (사용자가 저장 여부 선택)
+			if (startFrom === 'transcribing' || startFrom === 'analyzing' || startFrom === 'generating') {
+				journalCreationStore.setPreview();
 			}
-
-			// 사용량 다시 로드
-			await loadUsage();
 
 		} catch (err) {
 			journalCreationStore.setError(null, err instanceof Error ? err.message : '오류가 발생했어요');
@@ -256,10 +246,28 @@
 		journalCreationStore.reset();
 	}
 
-	// 다시 시작
+	// 다시 시작 (녹음 화면으로)
 	async function resetState() {
 		journalCreationStore.reset();
 		await loadUsage();
+	}
+
+	// 일기 저장하기 (미리보기에서 호출)
+	async function handleSaveJournal() {
+		journalCreationStore.setStatus('saving');
+		const saved = await saveJournal();
+		if (!saved) {
+			journalCreationStore.setError('saving', '저장에 실패했어요');
+			return;
+		}
+		// 사용량 다시 로드
+		await loadUsage();
+	}
+
+	// 일기 다시 쓰기 (저장 안 하고 녹음 화면으로)
+	async function handleDiscardJournal() {
+		journalCreationStore.reset();
+		await loadUsage(); // 사용량 다시 로드 (API 호출로 이미 카운트됨)
 	}
 
 	// 토스트 에러 메시지 (사용량 초과 등)
@@ -299,24 +307,43 @@
 			<p class="text-xl text-(--color-text)">어땠어?</p>
 		</div>
 
-		<!-- 사용량 표시 -->
-		{#if usageInfo}
-			<div class="mb-8 text-center animate-fade-in">
-				<div class="inline-flex items-center gap-3 px-5 py-2.5 glass rounded-full text-sm shadow-sm">
-					<span class="text-(--color-text-light)">오늘</span>
-					<div class="flex gap-1.5">
-						{#each Array(usageInfo.limit) as _, i}
-							<div class="w-2.5 h-2.5 rounded-full transition-all duration-300 {i < usageInfo.used ? 'bg-(--color-primary) shadow-sm' : 'bg-gray-200'}"></div>
-						{/each}
+		<!-- 스트릭 & 사용량 표시 -->
+		<div class="mb-8 text-center animate-fade-in">
+			<div class="flex flex-col items-center gap-3">
+				<!-- 스트릭 표시 -->
+				{#if streak > 0}
+					<div class="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-orange-100 to-amber-100 rounded-full shadow-sm border border-orange-200">
+						<span class="text-xl">🔥</span>
+						<span class="font-bold text-orange-600">{streak}일</span>
+						<span class="text-sm text-orange-500">연속!</span>
+						{#if streakMilestone}
+							<span class="text-xs text-orange-400 ml-1">→ {streakMilestone.next}일 {streakMilestone.emoji}</span>
+						{/if}
 					</div>
-					<span class="font-semibold text-(--color-text)">{usageInfo.remaining}번 남음</span>
-				</div>
+				{/if}
+
+				<!-- 사용량 표시 -->
+				{#if usageInfo}
+					<div class="inline-flex items-center gap-3 px-5 py-2.5 glass rounded-full text-sm shadow-sm">
+						<span class="text-(--color-text-light)">오늘</span>
+						<div class="flex gap-1.5">
+							{#each Array(usageInfo.limit) as _, i}
+								<div class="w-2.5 h-2.5 rounded-full transition-all duration-300 {i < usageInfo.used ? 'bg-(--color-primary) shadow-sm' : 'bg-gray-200'}"></div>
+							{/each}
+						</div>
+						<span class="font-semibold text-(--color-text)">{usageInfo.remaining}번 남음</span>
+					</div>
+				{/if}
 			</div>
-		{/if}
+		</div>
 
 		{#if !usageInfo || usageInfo.canCreate}
 			<!-- 사용량 정보가 없거나(로딩 중) 생성 가능하면 버튼 표시 -->
-			<RecordButton onRecordingComplete={handleRecordingComplete} onError={handleError} />
+			<RecordButton
+				onRecordingComplete={handleRecordingComplete}
+				onError={handleError}
+				canRecord={usageInfo?.canCreate ?? true}
+			/>
 		{:else}
 			<!-- 제한 초과 메시지 -->
 			<div class="text-center px-6 animate-fade-up">
@@ -328,8 +355,8 @@
 				<p class="text-sm text-(--color-text-muted)">매일 자정에 초기화돼요</p>
 			</div>
 		{/if}
-	{:else if pageStatus === 'completed' && analysisResult}
-		<!-- 완료 화면: 결과 표시 -->
+	{:else if pageStatus === 'preview' && analysisResult}
+		<!-- 미리보기 화면: 저장 전 확인 -->
 		<div class="w-full max-w-sm animate-fade-up">
 			<!-- 이미지 -->
 			<div class="relative rounded-2xl overflow-hidden shadow-lg mb-6">
@@ -359,8 +386,69 @@
 				</div>
 			</div>
 
-			<!-- 버튼들 -->
+			<!-- 버튼들: 저장 / 다시쓰기 -->
+			<div class="flex flex-col gap-3">
+				<button
+					class="w-full py-3.5 btn-primary"
+					onclick={handleSaveJournal}
+				>
+					일기 저장해요!
+				</button>
+				<button
+					class="w-full py-3.5 bg-(--color-secondary) text-(--color-text) rounded-2xl font-medium transition-colors hover:bg-(--color-primary-light)"
+					onclick={handleDiscardJournal}
+				>
+					일기 다시쓸래요~
+				</button>
+			</div>
+		</div>
+	{:else if pageStatus === 'completed' && analysisResult}
+		<!-- 완료 화면: 저장 완료 -->
+		<div class="w-full max-w-sm animate-fade-up">
+			<!-- 완료 메시지 -->
+			<div class="text-center mb-6">
+				<div class="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full">
+					<span>✅</span>
+					<span class="font-medium">일기가 저장되었어요!</span>
+				</div>
+			</div>
+
+			<!-- 이미지 -->
+			<div class="relative rounded-2xl overflow-hidden shadow-lg mb-6">
+				<img src={imageUrl} alt="오늘의 그림일기" class="w-full aspect-square object-cover" />
+				<!-- 감정 뱃지 -->
+				<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+					<span class="text-lg">{EMOTION_EMOJI[analysisResult.emotion] || '😌'}</span>
+				</div>
+			</div>
+
+			<!-- 감정 태그 -->
+			<div class="flex items-center gap-2 mb-3">
+				<div class="inline-flex items-center gap-1.5 px-3 py-1 bg-(--color-secondary) rounded-full">
+					<span class="text-base">{EMOTION_EMOJI[analysisResult.emotion] || '😌'}</span>
+					<span class="text-sm font-medium text-(--color-text)">{EMOTION_KOREAN[analysisResult.emotion] || '평온'}</span>
+				</div>
+			</div>
+
+			<!-- 요약 -->
+			<p class="text-lg font-medium leading-relaxed mb-5 text-(--color-text)">{analysisResult.summary}</p>
+
+			<!-- 캐릭터 메시지 -->
+			<div class="bg-linear-to-r from-orange-50 to-amber-50 rounded-2xl p-5 mb-6 border border-orange-100">
+				<div class="flex items-start gap-3">
+					<span class="text-2xl">🐶</span>
+					<p class="text-base leading-relaxed italic text-(--color-text)">"{analysisResult.characterMessage}"</p>
+				</div>
+			</div>
+
+			<!-- 버튼: 캘린더로 이동 또는 새 일기 -->
 			<div class="flex gap-3">
+				<button
+					class="flex-1 py-3.5 bg-(--color-secondary) text-(--color-text) rounded-2xl font-medium transition-colors hover:bg-(--color-primary-light)"
+					onclick={() => goto('/calendar')}
+				>
+					캘린더 보기
+				</button>
 				<button
 					class="flex-1 py-3.5 btn-primary"
 					onclick={resetState}

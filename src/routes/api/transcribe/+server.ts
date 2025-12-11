@@ -2,13 +2,61 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import OpenAI from 'openai';
 import { OPENAI_API_KEY } from '$env/static/private';
+import { supabaseAdmin } from '$lib/server/supabase';
+import { DAILY_LIMIT } from '$lib/constants';
 
 const openai = new OpenAI({
 	apiKey: OPENAI_API_KEY
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
+		// 세션에서 user_id 가져오기
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return json(
+				{ success: false, error: 'UNAUTHORIZED', message: '로그인이 필요해요' },
+				{ status: 401 }
+			);
+		}
+
+		const userId = user.id;
+
+		// 사용량 체크 및 증가 (API 호출 전에!)
+		const today = new Date();
+		const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+		const { data: userData } = await supabaseAdmin
+			.from('users')
+			.select('daily_usage_count, daily_usage_date')
+			.eq('id', userId)
+			.single();
+
+		// 날짜가 바뀌면 카운트 리셋
+		let todayCount = 0;
+		if (userData && userData.daily_usage_date === todayStr) {
+			todayCount = userData.daily_usage_count || 0;
+		}
+
+		// 한도 체크
+		if (todayCount >= DAILY_LIMIT) {
+			return json(
+				{
+					success: false,
+					error: 'DAILY_LIMIT_EXCEEDED',
+					message: '오늘은 여기까지! 내일 다시 이야기 들려줘 🐶'
+				},
+				{ status: 429 }
+			);
+		}
+
+		// 사용량 카운트 증가 (API 호출 전에 먼저!)
+		const newCount = todayCount + 1;
+		await supabaseAdmin.from('users').update({
+			daily_usage_count: newCount,
+			daily_usage_date: todayStr
+		}).eq('id', userId);
+
 		const formData = await request.formData();
 		const audioFile = formData.get('audio') as File;
 

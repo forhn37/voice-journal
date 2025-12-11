@@ -1,7 +1,7 @@
 // 일기 생성 진행 상태를 관리하는 전역 스토어
 import type { AnalysisResult } from '$lib/types';
 
-type PageStatus = 'idle' | 'transcribing' | 'analyzing' | 'generating' | 'saving' | 'completed' | 'error';
+type PageStatus = 'idle' | 'transcribing' | 'analyzing' | 'generating' | 'preview' | 'saving' | 'completed' | 'error';
 type ErrorStep = 'transcribing' | 'analyzing' | 'generating' | 'saving' | null;
 
 interface JournalCreationState {
@@ -46,6 +46,7 @@ export const journalCreationStore = {
 	get lastRecordingBlob() { return state.lastRecordingBlob; },
 	get isProcessing() {
 		return state.pageStatus !== 'idle' &&
+		       state.pageStatus !== 'preview' &&
 		       state.pageStatus !== 'completed' &&
 		       state.pageStatus !== 'error';
 	},
@@ -72,6 +73,11 @@ export const journalCreationStore = {
 
 	setImage(url: string) {
 		state.imageUrl = url;
+	},
+
+	// 미리보기 상태로 전환 (저장 전)
+	setPreview() {
+		state.pageStatus = 'preview';
 	},
 
 	setCompleted(journalId: string) {

@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 
-// 프로필 조회
+// 유저 정보 조회
 export const GET: RequestHandler = async ({ locals }) => {
 	try {
 		const { user } = await locals.safeGetSession();
@@ -14,30 +14,30 @@ export const GET: RequestHandler = async ({ locals }) => {
 		}
 
 		const { data, error } = await supabaseAdmin
-			.from('profiles')
+			.from('users')
 			.select('*')
 			.eq('id', user.id)
 			.single();
 
 		if (error) {
-			// 프로필이 없으면 null 반환 (온보딩 필요)
+			// 유저 정보가 없으면 null 반환 (온보딩 필요)
 			if (error.code === 'PGRST116') {
-				return json({ success: true, profile: null });
+				return json({ success: true, user: null });
 			}
 			throw error;
 		}
 
-		return json({ success: true, profile: data });
+		return json({ success: true, user: data });
 	} catch (error) {
-		console.error('프로필 조회 오류:', error);
+		console.error('유저 정보 조회 오류:', error);
 		return json(
-			{ success: false, error: 'PROFILE_ERROR', message: '프로필을 불러올 수 없어요' },
+			{ success: false, error: 'USER_ERROR', message: '유저 정보를 불러올 수 없어요' },
 			{ status: 500 }
 		);
 	}
 };
 
-// 프로필 생성/업데이트
+// 유저 정보 생성/업데이트
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const { user } = await locals.safeGetSession();
@@ -59,18 +59,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		// upsert: 있으면 업데이트, 없으면 생성
 		const { data, error } = await supabaseAdmin
-			.from('profiles')
+			.from('users')
 			.upsert({
 				id: user.id,
 				nickname: nickname.trim(),
-				notification_time: notificationTime || null,
-				updated_at: new Date().toISOString()
+				notification_time: notificationTime || null
 			})
 			.select()
 			.single();
 
 		if (error) {
-			console.error('프로필 저장 Supabase 오류:', {
+			console.error('유저 정보 저장 Supabase 오류:', {
 				message: error.message,
 				code: error.code,
 				details: error.details,
@@ -79,11 +78,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw error;
 		}
 
-		return json({ success: true, profile: data });
+		return json({ success: true, user: data });
 	} catch (error) {
-		console.error('프로필 저장 오류:', error);
+		console.error('유저 정보 저장 오류:', error);
 		return json(
-			{ success: false, error: 'PROFILE_ERROR', message: '프로필 저장에 실패했어요' },
+			{ success: false, error: 'USER_ERROR', message: '유저 정보 저장에 실패했어요' },
 			{ status: 500 }
 		);
 	}

@@ -1,0 +1,29 @@
+{
+	"name": "Voice Journal - AI 음성 그림일기",
+	"short_name": "Voice Journal",
+	"description": "말로 기록하면, AI가 그림일기로 만들어주는 감성 저널링 앱",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#FFF8F0",
+	"theme_color": "#FF9F7A",
+	"orientation": "portrait",
+	"scope": "/",
+	"lang": "ko",
+	"icons": [
+		{
+			"src": "/icons/web-app-manifest-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/web-app-manifest-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		}
+	],
+	"categories": ["lifestyle", "productivity"],
+	"screenshots": [],
+	"prefer_related_applications": false
+}

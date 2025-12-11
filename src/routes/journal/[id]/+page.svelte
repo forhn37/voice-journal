@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
 	import type { Journal } from '$lib/types';
 
@@ -11,6 +12,10 @@
 	let journal = $state<Journal | null>(null);
 	let isLoading = $state(true);
 	let errorMessage = $state('');
+
+	// 삭제 관련 상태
+	let showDeleteModal = $state(false);
+	let isDeleting = $state(false);
 
 	// 날짜 포맷팅
 	const formatDate = (dateString: string) => {
@@ -52,6 +57,31 @@
 	function handleBack() {
 		goto('/calendar');
 	}
+
+	// 일기 삭제
+	async function handleDelete() {
+		if (!journal) return;
+
+		isDeleting = true;
+		try {
+			const res = await fetch(`/api/journal?id=${journal.id}`, {
+				method: 'DELETE'
+			});
+			const data = await res.json();
+
+			if (data.success) {
+				goto('/calendar');
+			} else {
+				errorMessage = data.message || '삭제에 실패했어요';
+				showDeleteModal = false;
+			}
+		} catch (err) {
+			errorMessage = '삭제 중 오류가 발생했어요';
+			showDeleteModal = false;
+		} finally {
+			isDeleting = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -60,22 +90,40 @@
 
 <main class="flex-1 flex flex-col">
 	<!-- 헤더 -->
-	<header class="flex items-center gap-3 px-6 py-4 border-b border-gray-200">
-		<button
-			onclick={handleBack}
-			class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-			aria-label="뒤로 가기"
-		>
-			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M15 19l-7-7 7-7"
-				/>
-			</svg>
-		</button>
-		<h1 class="text-lg font-semibold">일기</h1>
+	<header class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+		<div class="flex items-center gap-3">
+			<button
+				onclick={handleBack}
+				class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+				aria-label="뒤로 가기"
+			>
+				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 19l-7-7 7-7"
+					/>
+				</svg>
+			</button>
+			<h1 class="text-lg font-semibold">일기</h1>
+		</div>
+		{#if journal && !isLoading}
+			<button
+				onclick={() => showDeleteModal = true}
+				class="p-2 hover:bg-red-50 rounded-full transition-colors text-red-400 hover:text-red-500"
+				aria-label="삭제"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+					/>
+				</svg>
+			</button>
+		{/if}
 	</header>
 
 	<!-- 본문 -->
@@ -160,3 +208,14 @@
 </main>
 
 <BottomNav />
+
+<!-- 삭제 확인 모달 -->
+<ConfirmModal
+	show={showDeleteModal}
+	title="일기 삭제"
+	message={`이 일기를 삭제할까요?\n삭제하면 다시 복구할 수 없어요`}
+	confirmText={isDeleting ? '삭제 중...' : '삭제'}
+	cancelText="취소"
+	onConfirm={handleDelete}
+	onCancel={() => showDeleteModal = false}
+/>

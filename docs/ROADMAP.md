@@ -10,17 +10,17 @@
 
 ## Week 1: 핵심 기능
 
-### Day 1: 프로젝트 셋업 ⏱️ 3h
+### Day 1: 프로젝트 셋업 ⏱️ 3h ✅
 
 #### TODO
-- [ ] SvelteKit 프로젝트 생성 (Svelte 5)
+- [x] SvelteKit 프로젝트 생성 (Svelte 5)
   ```bash
   npx sv create voice-journal
   # 옵션: SvelteKit minimal, TypeScript, TailwindCSS, ESLint, Prettier
   # Svelte 5가 기본으로 설치됨
   ```
-- [ ] TailwindCSS 설정 확인
-- [ ] 기본 폴더 구조 생성
+- [x] TailwindCSS 설정 확인
+- [x] 기본 폴더 구조 생성
   ```
   src/
   ├── routes/
@@ -34,13 +34,13 @@
   │   └── prompts/
   └── app.css
   ```
-- [ ] 환경변수 설정 (`.env`, `.env.example`)
-- [ ] Sentry 설치 및 설정
+- [x] 환경변수 설정 (`.env`, `.env.example`)
+- [x] Sentry 설치 및 설정
   ```bash
   npx @sentry/wizard@latest -i sveltekit
   ```
-- [ ] 기본 레이아웃 컴포넌트 (`+layout.svelte`)
-- [ ] 메인 페이지 기본 UI (빈 껍데기)
+- [x] 기본 레이아웃 컴포넌트 (`+layout.svelte`)
+- [x] 메인 페이지 기본 UI (빈 껍데기)
 
 #### 완료 기준
 - `npm run dev`로 로컬 서버 실행
@@ -49,17 +49,17 @@
 
 ---
 
-### Day 2: 온보딩 플로우 ⏱️ 3h
+### Day 2: 온보딩 플로우 ⏱️ 3h ✅
 
 #### TODO
-- [ ] `/onboarding` 라우트 생성
-- [ ] 온보딩 스텝 컴포넌트
-  - [ ] Step 1: 환영 화면
-  - [ ] Step 2: 닉네임 입력
-  - [ ] Step 3: 알림 시간 선택
-- [ ] 로컬 스토리지에 온보딩 완료 상태 저장
-- [ ] 온보딩 미완료 시 리다이렉트 로직
-- [ ] 캐릭터 이미지 (임시 이모지 사용)
+- [x] `/onboarding` 라우트 생성
+- [x] 온보딩 스텝 컴포넌트
+  - [x] Step 1: 환영 화면
+  - [x] Step 2: 닉네임 입력
+  - [x] Step 3: 알림 시간 선택
+- [x] ~~로컬 스토리지에 온보딩 완료 상태 저장~~ → Supabase profiles 테이블 사용
+- [x] 온보딩 미완료 시 리다이렉트 로직
+- [x] 캐릭터 이미지 (임시 이모지 사용)
 
 #### 완료 기준
 - 온보딩 3단계 플로우 동작
@@ -68,21 +68,21 @@
 
 ---
 
-### Day 3: 음성 녹음 기능 ⏱️ 3h
+### Day 3: 음성 녹음 기능 ⏱️ 3h ✅
 
 #### TODO
-- [ ] `RecordButton.svelte` 컴포넌트
-- [ ] MediaRecorder API 래퍼 유틸
+- [x] `RecordButton.svelte` 컴포넌트
+- [x] MediaRecorder API 래퍼 유틸
   ```typescript
   // src/lib/utils/audio.ts
   - startRecording()
   - stopRecording() → Blob
   - getAudioDuration()
   ```
-- [ ] 녹음 상태 관리 (idle, recording, processing)
-- [ ] 녹음 중 UI (타이머, 파형 애니메이션)
-- [ ] 녹음 시간 제한 (3초~5분)
-- [ ] 마이크 권한 요청 및 에러 처리
+- [x] 녹음 상태 관리 (idle, recording, processing)
+- [x] 녹음 중 UI (타이머, 파형 애니메이션)
+- [x] 녹음 시간 제한 (3초~5분)
+- [x] 마이크 권한 요청 및 에러 처리
 
 #### 완료 기준
 - 녹음 시작/정지 동작
@@ -91,18 +91,18 @@
 
 ---
 
-### Day 4: Whisper API 연동 (STT) ⏱️ 3h
+### Day 4: Whisper API 연동 (STT) ⏱️ 3h ✅
 
 #### TODO
-- [ ] `/api/transcribe/+server.ts` 생성
-- [ ] OpenAI SDK 설치
+- [x] `/api/transcribe/+server.ts` 생성
+- [x] OpenAI SDK 설치
   ```bash
   npm install openai
   ```
-- [ ] Whisper API 호출 로직
-- [ ] 오디오 파일 검증 (크기, 형식)
-- [ ] 에러 핸들링 (API 에러, 타임아웃)
-- [ ] 클라이언트에서 API 호출 및 결과 표시
+- [x] Whisper API 호출 로직
+- [x] 오디오 파일 검증 (크기, 형식)
+- [x] 에러 핸들링 (API 에러, 타임아웃)
+- [x] 클라이언트에서 API 호출 및 결과 표시
 
 #### 완료 기준
 - 녹음 → 텍스트 변환 성공
@@ -111,18 +111,18 @@
 
 ---
 
-### Day 5: GPT 분석 연동 ⏱️ 3h
+### Day 5: GPT 분석 연동 ⏱️ 3h ✅
 
 #### TODO
-- [ ] `/api/analyze/+server.ts` 생성
-- [ ] 분석 프롬프트 작성 (`src/lib/prompts/analyze.ts`)
-- [ ] GPT-4o-mini 호출 로직
-- [ ] JSON 응답 파싱
+- [x] `/api/analyze/+server.ts` 생성
+- [x] 분석 프롬프트 작성 (`src/lib/prompts/analyze.ts`)
+- [x] GPT-4o-mini 호출 로직
+- [x] JSON 응답 파싱
   ```typescript
   { scene, emotion, emotionScore, summary, characterMessage }
   ```
-- [ ] 프롬프트 테스트 및 튜닝
-- [ ] 다양한 입력에 대한 테스트
+- [x] 프롬프트 테스트 및 튜닝
+- [x] 다양한 입력에 대한 테스트
 
 #### 완료 기준
 - 텍스트 → 분석 결과 반환
@@ -131,15 +131,15 @@
 
 ---
 
-### Day 6: DALL-E 이미지 생성 ⏱️ 3h
+### Day 6: DALL-E 이미지 생성 ⏱️ 3h ✅
 
 #### TODO
-- [ ] `/api/generate-image/+server.ts` 생성
-- [ ] 이미지 프롬프트 빌더 (`src/lib/prompts/image.ts`)
-- [ ] DALL-E 3 API 호출 (512x512)
-- [ ] 이미지 URL 반환
-- [ ] 감정별 스타일 적용
-- [ ] 결과 화면 UI (이미지 + 텍스트)
+- [x] `/api/generate-image/+server.ts` 생성
+- [x] 이미지 프롬프트 빌더 (`src/lib/prompts/image.ts`)
+- [x] DALL-E 3 API 호출 (1024x1024)
+- [x] 이미지 URL 반환
+- [x] 감정별 스타일 적용
+- [x] 결과 화면 UI (이미지 + 텍스트)
 
 #### 완료 기준
 - 장면 설명 → 이미지 생성
@@ -148,20 +148,20 @@
 
 ---
 
-### Day 7: 로딩 경험 (캐릭터) ⏱️ 3h
+### Day 7: 로딩 경험 (캐릭터) ⏱️ 3h ✅
 
 #### TODO
-- [ ] `LoadingCharacter.svelte` 컴포넌트
-- [ ] 로딩 단계별 메시지 시퀀스
+- [x] `LoadingCharacter.svelte` 컴포넌트
+- [x] 로딩 단계별 메시지 시퀀스
   ```
   0초: "오늘 이야기 잘 들었어!"
   3초: "음... 그랬구나~"
   6초: "그림 그려볼게!"
   ...
   ```
-- [ ] 캐릭터 애니메이션 (CSS)
-- [ ] 진행 상태 인디케이터
-- [ ] 감정 기반 공감 메시지 표시
+- [x] 캐릭터 애니메이션 (CSS)
+- [x] 진행 상태 인디케이터
+- [x] 감정 기반 공감 메시지 표시
 
 #### 완료 기준
 - 15~30초 로딩 동안 지루하지 않음
@@ -172,21 +172,20 @@
 
 ## Week 2: 완성 + 리텐션
 
-### Day 8: Supabase 연동 (Auth + DB) ⏱️ 3h
+### Day 8: Supabase 연동 (Auth + DB) ⏱️ 3h ✅
 
 #### TODO
-- [ ] Supabase 프로젝트 생성
-- [ ] Supabase SDK 설치
+- [x] Supabase 프로젝트 생성
+- [x] Supabase SDK 설치
   ```bash
-  npm install @supabase/supabase-js @supabase/auth-helpers-sveltekit
+  npm install @supabase/supabase-js @supabase/ssr
   ```
-- [ ] DB 테이블 생성 (SQL 실행)
+- [x] DB 테이블 생성 (SQL 실행)
   - profiles
   - journals
-  - daily_usage
-- [ ] RLS 정책 설정
-- [ ] Auth 설정 (이메일/구글)
-- [ ] 로그인/회원가입 UI
+- [x] RLS 정책 설정
+- [x] Auth 설정 (이메일/구글)
+- [x] 로그인/회원가입 UI
 
 #### 완료 기준
 - 회원가입/로그인 동작
@@ -195,15 +194,15 @@
 
 ---
 
-### Day 9: 일기 저장/조회 + 캘린더 ⏱️ 3h
+### Day 9: 일기 저장/조회 + 캘린더 ⏱️ 3h ✅
 
 #### TODO
-- [ ] `/api/journals/+server.ts` (POST, GET)
-- [ ] 일기 저장 로직 (전체 플로우 연결)
-- [ ] 일기 목록 조회
-- [ ] `Calendar.svelte` 컴포넌트
-- [ ] 캘린더 뷰 (월별 썸네일)
-- [ ] 일기 상세 페이지 (`/journal/[id]`)
+- [x] `/api/journal/+server.ts` (POST, GET)
+- [x] 일기 저장 로직 (전체 플로우 연결)
+- [x] 일기 목록 조회
+- [x] 캘린더 페이지 (`/calendar`)
+- [x] 캘린더 뷰 (월별 감정 이모지)
+- [x] 일기 상세 페이지 (`/journal/[id]`)
 
 #### 완료 기준
 - 녹음 → 분석 → 이미지 → 저장 전체 플로우
@@ -212,14 +211,14 @@
 
 ---
 
-### Day 10: 스트릭 시스템 ⏱️ 2h
+### Day 10: 스트릭 시스템 ⏱️ 2h ✅
 
 #### TODO
-- [ ] 스트릭 계산 함수 (DB)
-- [ ] `/api/usage/+server.ts`
-- [ ] 스트릭 UI 컴포넌트
-- [ ] 메인 화면에 스트릭 표시
-- [ ] 스트릭 마일스톤 (7일, 30일, 100일)
+- [x] 스트릭 계산 함수 (`+page.server.ts`, `/api/usage`)
+- [x] `/api/usage/+server.ts`에 스트릭 추가
+- [x] 스트릭 UI (메인 페이지)
+- [x] 메인 화면에 스트릭 표시
+- [x] 스트릭 마일스톤 (7일, 30일, 100일, 365일)
 
 #### 완료 기준
 - 연속 기록 일수 정확히 계산
@@ -247,18 +246,18 @@
 
 ---
 
-### Day 12: 에러 처리 + 입력 검증 ⏱️ 3h
+### Day 12: 에러 처리 + 입력 검증 ⏱️ 3h ✅
 
 #### TODO
-- [ ] 에러 UI 컴포넌트 (캐릭터 + 메시지)
-- [ ] 각 단계별 에러 처리
+- [x] 에러 UI 컴포넌트 (캐릭터 + 메시지)
+- [x] 각 단계별 에러 처리
   - 녹음 실패
   - STT 실패
   - 분석 실패
   - 이미지 생성 실패
-- [ ] 재시도 로직
-- [ ] 일일 사용량 제한 (3회)
-- [ ] 사용량 초과 시 안내
+- [x] 재시도 로직
+- [x] 일일 사용량 제한 (3회)
+- [x] 사용량 초과 시 안내
 
 #### 완료 기준
 - 모든 에러 상황에서 친절한 메시지
@@ -267,14 +266,15 @@
 
 ---
 
-### Day 13: UI/UX 다듬기 ⏱️ 3h
+### Day 13: UI/UX 다듬기 ⏱️ 3h ✅
 
 #### TODO
-- [ ] 반응형 디자인 점검 (모바일 우선)
-- [ ] 애니메이션 추가 (페이지 전환, 버튼)
-- [ ] 로딩 스켈레톤
-- [ ] 빈 상태 UI (일기 없을 때)
-- [ ] 폰트, 색상 통일
+- [x] 반응형 디자인 점검 (모바일 우선)
+- [x] 애니메이션 추가 (페이지 전환, 버튼)
+- [x] 로딩 스켈레톤
+- [x] 빈 상태 UI (일기 없을 때)
+- [x] 폰트, 색상 통일
+- [x] SSR (Server-Side Rendering) 적용
 - [ ] 접근성 점검 (a11y)
 
 #### 완료 기준
@@ -324,25 +324,26 @@
 ## 체크리스트 요약
 
 ### 기능
-- [ ] 음성 녹음
-- [ ] STT (Whisper)
-- [ ] AI 분석 (GPT)
-- [ ] 이미지 생성 (DALL-E)
-- [ ] 캐릭터 로딩 경험
-- [ ] 일기 저장/조회
-- [ ] 캘린더 뷰
+- [x] 음성 녹음
+- [x] STT (Whisper)
+- [x] AI 분석 (GPT)
+- [x] 이미지 생성 (DALL-E)
+- [x] 캐릭터 로딩 경험
+- [x] 일기 저장/조회
+- [x] 캘린더 뷰
 - [ ] 스트릭 시스템
 - [ ] 공유 기능
-- [ ] 온보딩
+- [x] 온보딩
 
 ### 기술
-- [ ] Supabase Auth
-- [ ] Supabase DB + RLS
-- [ ] API 키 서버사이드
-- [ ] 입력 검증
-- [ ] 에러 처리
-- [ ] 사용량 제한
-- [ ] Sentry 모니터링
+- [x] Supabase Auth
+- [x] Supabase DB + RLS
+- [x] API 키 서버사이드
+- [x] 입력 검증
+- [x] 에러 처리
+- [x] 사용량 제한
+- [x] Sentry 모니터링
+- [x] SSR (Server-Side Rendering)
 
 ### 법적
 - [ ] 개인정보처리방침

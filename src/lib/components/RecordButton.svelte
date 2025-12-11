@@ -11,9 +11,10 @@
 	interface Props {
 		onRecordingComplete: (blob: Blob, duration: number) => void;
 		onError: (message: string) => void;
+		canRecord?: boolean; // 녹음 가능 여부 (한도 체크용)
 	}
 
-	let { onRecordingComplete, onError }: Props = $props();
+	let { onRecordingComplete, onError, canRecord = true }: Props = $props();
 
 	let status = $state<Status>('idle');
 	let duration = $state(0);
@@ -26,6 +27,12 @@
 
 	// 녹음 시작
 	async function handleStart() {
+		// 한도 체크 (녹음 시작 전)
+		if (!canRecord) {
+			onError('오늘은 여기까지! 내일 다시 이야기 들려줘 🐶');
+			return;
+		}
+
 		try {
 			await startRecording();
 			status = 'recording';

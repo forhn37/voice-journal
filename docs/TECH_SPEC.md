@@ -66,28 +66,31 @@ Server: Supabase에 저장
 
 ## 2. DB 스키마 (Supabase)
 
-### 2.1 profiles 테이블 (auth.users 확장)
+### 2.1 users 테이블 (auth.users 확장)
 
 ```sql
-CREATE TABLE profiles (
+CREATE TABLE users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   nickname VARCHAR(50),
   notification_time TIME,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  streak_count INTEGER DEFAULT 0,           -- 캐시된 스트릭 카운트
+  last_journal_date DATE,                   -- 마지막 일기 작성 날짜 (캐싱용)
+  daily_usage_count INTEGER DEFAULT 0,      -- 오늘 API 사용 횟수 (삭제해도 유지)
+  daily_usage_date DATE,                    -- 사용량 카운트 날짜
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- RLS 정책
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view own profile"
-  ON profiles FOR SELECT USING (auth.uid() = id);
+  ON users FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile"
-  ON profiles FOR UPDATE USING (auth.uid() = id);
+  ON users FOR UPDATE USING (auth.uid() = id);
 
 CREATE POLICY "Users can insert own profile"
-  ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+  ON users FOR INSERT WITH CHECK (auth.uid() = id);
 ```
 
 ### 2.2 journals 테이블

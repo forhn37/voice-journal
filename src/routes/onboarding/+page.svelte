@@ -24,8 +24,8 @@
 		error = '';
 
 		try {
-			// Supabase에 프로필 저장
-			const res = await fetch('/api/profile', {
+			// Supabase에 유저 정보 저장
+			const res = await fetch('/api/user', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { EMOTION_EMOJI } from '$lib/constants';
@@ -8,34 +7,10 @@
 
 	let { data } = $props();
 
-	let journals = $state<JournalSummary[]>([]);
+	// 서버에서 미리 로드된 일기 목록
+	let journals = $state<JournalSummary[]>(data.journals || []);
 	let currentDate = $state(new Date());
 	let selectedJournal = $state<JournalSummary | null>(null);
-	let isLoading = $state(true);
-
-	onMount(async () => {
-		// 로그인 체크
-		if (!data.user) {
-			goto('/login');
-			return;
-		}
-		await loadJournals();
-	});
-
-	async function loadJournals() {
-		isLoading = true;
-		try {
-			const res = await fetch('/api/journal');
-			const data = await res.json();
-			if (data.success) {
-				journals = data.journals;
-			}
-		} catch (err) {
-			console.error('일기 로드 실패:', err);
-		} finally {
-			isLoading = false;
-		}
-	}
 
 	// 현재 월의 날짜들 계산
 	function getCalendarDays() {
@@ -125,43 +100,34 @@
 	</div>
 
 	<!-- 캘린더 그리드 -->
-	{#if isLoading}
-		<!-- 스켈레톤 로딩 -->
-		<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
-			{#each Array(35) as _, i}
-				<div class="aspect-square skeleton"></div>
-			{/each}
-		</div>
-	{:else}
-		<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;" class="animate-fade-in">
-			{#each calendarDays as day, i}
-				{@const journal = day ? getJournalForDay(day) : undefined}
-				{@const dayOfWeek = i % 7}
-				<button
-					onclick={() => handleDayClick(day)}
-					class="aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all duration-200
-						{day ? 'hover:bg-(--color-surface-hover) hover:scale-105 cursor-pointer' : 'cursor-default'}
-						{journal ? 'bg-(--color-secondary) shadow-sm' : ''}"
-					disabled={!day}
-				>
-					{#if day}
-						<span class="{journal ? 'font-semibold' : ''} {dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : ''}">{day}</span>
-						{#if journal}
-							<span class="text-base mt-0.5">{EMOTION_EMOJI[journal.emotion] || '📝'}</span>
-						{/if}
+	<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+		{#each calendarDays as day, i}
+			{@const journal = day ? getJournalForDay(day) : undefined}
+			{@const dayOfWeek = i % 7}
+			<button
+				onclick={() => handleDayClick(day)}
+				class="aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all duration-200
+					{day ? 'hover:bg-(--color-surface-hover) hover:scale-105 cursor-pointer' : 'cursor-default'}
+					{journal ? 'bg-(--color-secondary) shadow-sm' : ''}"
+				disabled={!day}
+			>
+				{#if day}
+					<span class="{journal ? 'font-semibold' : ''} {dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : ''}">{day}</span>
+					{#if journal}
+						<span class="text-base mt-0.5">{EMOTION_EMOJI[journal.emotion] || '📝'}</span>
 					{/if}
-				</button>
-			{/each}
-		</div>
+				{/if}
+			</button>
+		{/each}
+	</div>
 
-		<!-- 이번 달 일기가 없으면 빈 상태 표시 -->
-		{#if journals.length === 0}
-			<EmptyState
-				type="calendar"
-				actionLabel="첫 일기 쓰러 가기"
-				onAction={() => goto('/')}
-			/>
-		{/if}
+	<!-- 이번 달 일기가 없으면 빈 상태 표시 -->
+	{#if journals.length === 0}
+		<EmptyState
+			type="calendar"
+			actionLabel="첫 일기 쓰러 가기"
+			onAction={() => goto('/')}
+		/>
 	{/if}
 
 	<!-- 선택된 일기 미리보기 (모달) -->

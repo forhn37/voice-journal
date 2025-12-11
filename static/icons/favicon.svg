@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 배경 -->
+  <rect width="512" height="512" rx="128" fill="#FF9F7A"></rect>
+
+  <!-- 푸들 몸통 (곱슬곱슬한 털) -->
+  <ellipse cx="256" cy="320" rx="90" ry="70" fill="#F5E6D3"></ellipse>
+
+  <!-- 푸들 얼굴 베이스 -->
+  <circle cx="256" cy="200" r="100" fill="#F5E6D3"></circle>
+
+  <!-- 곱슬 털 (머리 위) -->
+  <circle cx="200" cy="120" r="35" fill="#E8D5C4"></circle>
+  <circle cx="256" cy="100" r="40" fill="#E8D5C4"></circle>
+  <circle cx="312" cy="120" r="35" fill="#E8D5C4"></circle>
+  <circle cx="180" cy="150" r="30" fill="#E8D5C4"></circle>
+  <circle cx="332" cy="150" r="30" fill="#E8D5C4"></circle>
+
+  <!-- 귀 (곱슬) -->
+  <ellipse cx="140" cy="200" rx="45" ry="60" fill="#E8D5C4"></ellipse>
+  <circle cx="130" cy="170" r="25" fill="#DBC7B5"></circle>
+  <circle cx="150" cy="220" r="20" fill="#DBC7B5"></circle>
+  <circle cx="125" cy="200" r="18" fill="#DBC7B5"></circle>
+
+  <ellipse cx="372" cy="200" rx="45" ry="60" fill="#E8D5C4"></ellipse>
+  <circle cx="382" cy="170" r="25" fill="#DBC7B5"></circle>
+  <circle cx="362" cy="220" r="20" fill="#DBC7B5"></circle>
+  <circle cx="387" cy="200" r="18" fill="#DBC7B5"></circle>
+
+  <!-- 눈 -->
+  <circle cx="215" cy="195" r="18" fill="#4A4A4A"></circle>
+  <circle cx="297" cy="195" r="18" fill="#4A4A4A"></circle>
+  <circle cx="220" cy="190" r="6" fill="#FFFFFF"></circle>
+  <circle cx="302" cy="190" r="6" fill="#FFFFFF"></circle>
+
+  <!-- 코 -->
+  <ellipse cx="256" cy="240" rx="18" ry="14" fill="#4A4A4A"></ellipse>
+  <ellipse cx="256" cy="237" rx="6" ry="4" fill="#6A6A6A"></ellipse>
+
+  <!-- 입 -->
+  <path d="M 240 255 Q 256 275 272 255" stroke="#4A4A4A" stroke-width="4" fill="none" stroke-linecap="round"></path>
+
+  <!-- 혀 -->
+  <ellipse cx="256" cy="270" rx="12" ry="15" fill="#FF8A8A"></ellipse>
+
+  <!-- 볼터치 -->
+  <ellipse cx="190" cy="230" rx="15" ry="10" fill="#FFB5A0" opacity="0.6"></ellipse>
+  <ellipse cx="322" cy="230" rx="15" ry="10" fill="#FFB5A0" opacity="0.6"></ellipse>
+
+  <!-- 앞발 -->
+  <ellipse cx="200" cy="400" rx="35" ry="25" fill="#F5E6D3"></ellipse>
+  <ellipse cx="312" cy="400" rx="35" ry="25" fill="#F5E6D3"></ellipse>
+
+  <!-- 발 곱슬 털 -->
+  <circle cx="185" cy="395" r="12" fill="#E8D5C4"></circle>
+  <circle cx="215" cy="395" r="12" fill="#E8D5C4"></circle>
+  <circle cx="297" cy="395" r="12" fill="#E8D5C4"></circle>
+  <circle cx="327" cy="395" r="12" fill="#E8D5C4"></circle>
+</svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+@media (prefers-color-scheme: dark) { :root { filter: none; } }
+</style></svg>
