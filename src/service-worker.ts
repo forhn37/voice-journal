@@ -62,24 +62,19 @@ sw.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// GET 요청만 캐시 사용
+	// 정적 파일만 캐시 사용 (빌드된 파일들)
+	// SvelteKit 페이지 요청(/, /calendar 등)은 항상 네트워크로 최신 데이터 가져오기
 	if (event.request.method === 'GET') {
 		event.respondWith(
 			caches.match(event.request).then((cached) => {
+				// 캐시에 있으면 (빌드된 정적 파일)
 				if (cached) {
 					return cached;
 				}
 
-				return fetch(event.request).then((response) => {
-					// 성공적인 응답만 캐시
-					if (response.status === 200) {
-						const clone = response.clone();
-						caches.open(CACHE_NAME).then((cache) => {
-							cache.put(event.request, clone);
-						});
-					}
-					return response;
-				});
+				// 캐시에 없으면 네트워크 요청
+				// 하지만 캐시에 추가는 하지 않음 (동적 페이지는 항상 최신 데이터 필요)
+				return fetch(event.request);
 			})
 		);
 	}
