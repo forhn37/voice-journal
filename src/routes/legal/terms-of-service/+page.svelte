@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { page } from '$app/state';
 </script>
 
 <svelte:head>
 	<title>이용약관 - Voice Journal</title>
 </svelte:head>
 
-<div class="min-h-screen bg-(--color-background) py-8 px-4">
+<div class="min-h-screen bg-(--color-background) py-8 px-4 pb-20 overflow-y-auto">
 	<div class="max-w-3xl mx-auto bg-(--color-surface) rounded-2xl shadow-sm p-8">
 		<!-- 헤더 -->
 		<div class="mb-8">
