@@ -25,7 +25,7 @@ const supabaseHandle: Handle = async ({ event, resolve }) => {
 		}
 	});
 
-	// 세션 가져오기 (getUser는 API 호출, getSession은 쿠키에서 읽음)
+	// 세션 가져오기 - 서버사이드에서는 항상 getUser()로 검증
 	event.locals.safeGetSession = async () => {
 		const {
 			data: { session }
@@ -35,28 +35,17 @@ const supabaseHandle: Handle = async ({ event, resolve }) => {
 			return { session: null, user: null };
 		}
 
-		// 토큰 만료 시간 확인
-		const expiresAt = session.expires_at ?? 0;
-		const now = Math.floor(Date.now() / 1000);
-		const hoursUntilExpiry = (expiresAt - now) / 3600;
+		// 서버사이드에서는 항상 getUser()로 인증 검증 (Supabase 권장)
+		const {
+			data: { user },
+			error
+		} = await event.locals.supabase.auth.getUser();
 
-		// 1시간 이내 만료 예정이면 getUser로 검증 (보안)
-		// 아니면 세션 정보만 사용 (성능)
-		if (hoursUntilExpiry < 1) {
-			const {
-				data: { user },
-				error
-			} = await event.locals.supabase.auth.getUser();
-
-			if (error) {
-				return { session: null, user: null };
-			}
-
-			return { session, user };
+		if (error || !user) {
+			return { session: null, user: null };
 		}
 
-		// 토큰이 충분히 유효하면 API 호출 생략
-		return { session, user: session.user };
+		return { session, user };
 	};
 
 	return resolve(event, {
