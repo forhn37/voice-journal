@@ -175,8 +175,8 @@
 
 				if (signInError) throw signInError;
 
-				// 메인 페이지로 이동
-				goto('/');
+				// 메인 페이지로 이동 (강제 새로고침으로 세션 완전히 적용)
+				window.location.href = '/';
 			}
 		} catch (e: unknown) {
 			const authError = e as { message?: string };
