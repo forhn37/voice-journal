@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import {
+		checkNotificationPermission,
+		requestNotificationPermission,
+		scheduleNotification,
+		cancelNotification
+	} from '$lib/utils/reminder';
 
 	let { data } = $props();
 
@@ -12,8 +19,18 @@
 	let editNickname = $state('');
 	let isSaving = $state(false);
 
+	// 리마인더 설정
+	let notificationTime = $state(data.profile?.notification_time || '21:00');
+	let notificationEnabled = $state(!!data.profile?.notification_time);
+	let notificationPermission = $state<NotificationPermission>('default');
+
 	// 로그아웃 모달
 	let showLogoutModal = $state(false);
+
+	// 알림 권한 확인
+	onMount(() => {
+		notificationPermission = checkNotificationPermission();
+	});
 
 	// 닉네임 수정 시작
 	function startEditing() {
@@ -56,6 +73,65 @@
 		}
 	}
 
+	// 리마인더 토글
+	async function toggleReminder() {
+		if (!notificationEnabled) {
+			// 활성화
+			let hasPermission = notificationPermission === 'granted';
+			if (!hasPermission) {
+				hasPermission = await requestNotificationPermission();
+				notificationPermission = checkNotificationPermission();
+			}
+
+			if (!hasPermission) {
+				alert('알림 권한이 거부되었어요. 브라우저 설정에서 알림을 허용해주세요.');
+				return;
+			}
+
+			// DB에 저장
+			const res = await fetch('/api/profile', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ notification_time: notificationTime })
+			});
+			const result = await res.json();
+
+			if (result.success) {
+				notificationEnabled = true;
+				scheduleNotification(notificationTime);
+			}
+		} else {
+			// 비활성화
+			const res = await fetch('/api/profile', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ notification_time: null })
+			});
+			const result = await res.json();
+
+			if (result.success) {
+				notificationEnabled = false;
+				cancelNotification();
+			}
+		}
+	}
+
+	// 리마인더 시간 변경
+	async function changeNotificationTime() {
+		const res = await fetch('/api/profile', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ notification_time: notificationTime })
+		});
+		const result = await res.json();
+
+		if (result.success) {
+			if (notificationEnabled) {
+				scheduleNotification(notificationTime);
+			}
+		}
+	}
+
 	// 로그아웃
 	async function handleLogout() {
 		try {
@@ -64,6 +140,7 @@
 			localStorage.removeItem('nickname');
 			localStorage.removeItem('onboarding_completed');
 			localStorage.removeItem('notification_time');
+			localStorage.removeItem('notification_timer_id');
 			goto('/login');
 		} catch (err) {
 			console.error('로그아웃 실패:', err);
@@ -125,6 +202,58 @@
 			<p class="text-sm text-(--color-text-light) mb-1">이메일</p>
 			<p class="text-base text-(--color-text)">{email}</p>
 		</div>
+	</section>
+
+	<!-- 리마인더 섹션 -->
+	<section class="card p-5 mb-4">
+		<h2 class="text-sm font-semibold text-(--color-text-light) mb-4">리마인더</h2>
+
+		<!-- 알림 켜기/끄기 -->
+		<div class="py-3 border-b border-gray-100 flex items-center justify-between">
+			<div>
+				<p class="text-sm font-medium text-(--color-text) mb-1">일기 알림</p>
+				<p class="text-xs text-(--color-text-muted)">
+					{#if notificationPermission === 'denied'}
+						알림이 차단되어 있어요. 브라우저 설정에서 허용해주세요.
+					{:else if notificationPermission === 'granted'}
+						매일 설정한 시간에 알림을 받아요
+					{:else}
+						알림 권한이 필요해요
+					{/if}
+				</p>
+			</div>
+			<label class="relative inline-flex items-center cursor-pointer">
+				<input
+					type="checkbox"
+					bind:checked={notificationEnabled}
+					onchange={toggleReminder}
+					disabled={notificationPermission === 'denied'}
+					class="sr-only peer"
+				/>
+				<div
+					class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-(--color-primary) peer-disabled:opacity-50"
+				></div>
+			</label>
+		</div>
+
+		<!-- 알림 시간 설정 -->
+		{#if notificationEnabled}
+			<div class="py-3">
+				<label for="notification-time" class="text-sm text-(--color-text-light) mb-2 block"
+					>알림 시간</label
+				>
+				<div class="flex items-center gap-2">
+					<input
+						id="notification-time"
+						type="time"
+						bind:value={notificationTime}
+						onchange={changeNotificationTime}
+						class="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-(--color-text) focus:outline-none focus:border-(--color-primary)"
+					/>
+					<span class="text-sm text-(--color-text-muted)">({notificationTime})</span>
+				</div>
+			</div>
+		{/if}
 	</section>
 
 	<!-- 앱 정보 섹션 -->

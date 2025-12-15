@@ -8,6 +8,7 @@
 	import TimeCapsule from '$lib/components/TimeCapsule.svelte';
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
 	import { journalCreationStore } from '$lib/stores/journalCreation.svelte';
+	import { initializeReminder } from '$lib/utils/reminder';
 	import type { UsageInfo, Journal } from '$lib/types';
 
 	let { data } = $props();
@@ -39,6 +40,7 @@
 
 	onMount(() => {
 		loadTimeCapsule();
+		initializeReminder();
 	});
 
 	// 스트릭 마일스톤 계산
