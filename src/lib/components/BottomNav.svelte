@@ -14,7 +14,7 @@
 	<a
 		href="/"
 		onclick={handleRecordTabClick}
-		class="relative flex flex-col items-center px-6 py-2 rounded-xl transition-all duration-200
+		class="relative flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-200
 			{currentPath === '/'
 			? 'text-(--color-primary)'
 			: 'text-(--color-text-muted) hover:text-(--color-primary) hover:bg-(--color-surface-hover)'}"
@@ -45,7 +45,7 @@
 	<a
 		href="/calendar"
 		data-sveltekit-preload-data="hover"
-		class="relative flex flex-col items-center px-6 py-2 rounded-xl transition-all duration-200
+		class="relative flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-200
 			{currentPath === '/calendar' || currentPath.startsWith('/journal/')
 			? 'text-(--color-primary)'
 			: 'text-(--color-text-muted) hover:text-(--color-primary) hover:bg-(--color-surface-hover)'}"
@@ -73,9 +73,37 @@
 		<span class="text-xs mt-1 font-medium">캘린더</span>
 	</a>
 	<a
+		href="/stats"
+		data-sveltekit-preload-data="hover"
+		class="relative flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-200
+			{currentPath === '/stats'
+			? 'text-(--color-primary)'
+			: 'text-(--color-text-muted) hover:text-(--color-primary) hover:bg-(--color-surface-hover)'}"
+	>
+		<!-- 활성 인디케이터 -->
+		{#if currentPath === '/stats'}
+			<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-(--color-primary) rounded-full"></div>
+		{/if}
+		{#if currentPath === '/stats'}
+			<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+				<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2v-3h2v3zm0-5h-2v-2h2v2zm4 5h-2V7h2v10z"/>
+			</svg>
+		{:else}
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+				/>
+			</svg>
+		{/if}
+		<span class="text-xs mt-1 font-medium">통계</span>
+	</a>
+	<a
 		href="/settings"
 		data-sveltekit-preload-data="hover"
-		class="relative flex flex-col items-center px-6 py-2 rounded-xl transition-all duration-200
+		class="relative flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-200
 			{currentPath === '/settings'
 			? 'text-(--color-primary)'
 			: 'text-(--color-text-muted) hover:text-(--color-primary) hover:bg-(--color-surface-hover)'}"

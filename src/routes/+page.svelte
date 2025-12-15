@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { goto, beforeNavigate } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
 	import RecordButton from '$lib/components/RecordButton.svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import TimeCapsule from '$lib/components/TimeCapsule.svelte';
 	import { EMOTION_EMOJI, EMOTION_KOREAN } from '$lib/constants';
 	import { journalCreationStore } from '$lib/stores/journalCreation.svelte';
-	import type { UsageInfo } from '$lib/types';
+	import type { UsageInfo, Journal } from '$lib/types';
 
 	let { data } = $props();
 
@@ -14,6 +16,30 @@
 	let nickname = $state(data.profile?.nickname || '');
 	let usageInfo = $state<UsageInfo>(data.usage);
 	let streak = $state(data.streak || 0);
+
+	// 타임캡슐 (1년 전 오늘)
+	let timeCapsuleJournal = $state<Journal | null>(null);
+	let timeCapsuleDate = $state<string>('');
+
+	// 타임캡슐 로드
+	async function loadTimeCapsule() {
+		if (!browser) return;
+
+		try {
+			const res = await fetch('/api/timecapsule');
+			const data = await res.json();
+			if (data.success && data.journal) {
+				timeCapsuleJournal = data.journal;
+				timeCapsuleDate = data.oneYearAgoDate;
+			}
+		} catch (err) {
+			console.error('타임캡슐 조회 실패:', err);
+		}
+	}
+
+	onMount(() => {
+		loadTimeCapsule();
+	});
 
 	// 스트릭 마일스톤 계산
 	function getStreakMilestone(days: number): { next: number; emoji: string } | null {
@@ -305,6 +331,13 @@
 				{#if nickname}{nickname},{/if} 오늘 하루
 			</h1>
 			<p class="text-xl text-(--color-text)">어땠어?</p>
+		</div>
+
+		<!-- 타임캡슐 (1년 전 오늘) -->
+		<div class="w-full max-w-md px-4 mb-6">
+			{#if timeCapsuleJournal && timeCapsuleDate}
+				<TimeCapsule journal={timeCapsuleJournal} oneYearAgoDate={timeCapsuleDate} />
+			{/if}
 		</div>
 
 		<!-- 스트릭 & 사용량 표시 -->

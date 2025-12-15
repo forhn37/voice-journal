@@ -64,3 +64,19 @@ export type AnalysisResult = {
 	summary: string;
 	characterMessage: string;
 };
+
+// 감정 통계 타입
+export type EmotionDistribution = Record<Emotion, number>;
+
+export type DailyEmotion = {
+	date: string;
+	emotion: Emotion;
+	count: number;
+};
+
+export type EmotionStats = {
+	totalJournals: number;
+	streak: number;
+	emotionDistribution: EmotionDistribution;
+	dailyEmotions: DailyEmotion[];
+};
